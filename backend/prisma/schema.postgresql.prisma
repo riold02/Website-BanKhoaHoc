@@ -1,0 +1,263 @@
+// Prisma PostgreSQL Schema for Course & Student Management System (CMS)
+// For Production / Docker Compose Deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  roleId       Int       @map("role_id")
+  role         Role      @relation(fields: [roleId], references: [id])
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  profile      Profile?
+  student      Student?
+
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String   @map("full_name")
+  phone     String?
+  avatarUrl String?  @map("avatar_url")
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  courses     Course[]
+
+  @@map("categories")
+}
+
+model Course {
+  id            String             @id @default(uuid())
+  courseCode    String             @unique @map("course_code")
+  title         String
+  description   String?
+  totalHours    Int                @map("total_hours")
+  standardPrice Decimal            @default(0) @db.Decimal(12, 0) @map("standard_price")
+  isActive      Boolean            @default(true) @map("is_active")
+  categoryId    String?            @map("category_id")
+  category      Category?          @relation(fields: [categoryId], references: [id])
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  periods       EnrollmentPeriod[]
+
+  @@map("courses")
+}
+
+model Student {
+  id             String            @id @default(uuid())
+  userId         String            @unique @map("user_id")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentCode    String            @unique @map("student_code")
+  idCardNumber   String?           @map("id_card_number")
+  birthDate      DateTime?         @map("birth_date")
+  gender         String?
+  educationLevel String?           @map("education_level")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  registrations  Registration[]
+  enrollments    ClassEnrollment[]
+
+  @@map("students")
+}
+
+model EnrollmentPeriod {
+  id                 String         @id @default(uuid())
+  courseId           String         @map("course_id")
+  course             Course         @relation(fields: [courseId], references: [id])
+  periodCode         String         @unique @map("period_code")
+  name               String
+  startRegistration  DateTime       @map("start_registration")
+  endRegistration    DateTime       @map("end_registration")
+  expectedStartDate  DateTime?      @map("expected_start_date")
+  tuitionFee         Decimal        @default(0) @db.Decimal(12, 0) @map("tuition_fee")
+  maxCapacity        Int            @map("max_capacity")
+  currentEnrolled    Int            @default(0) @map("current_enrolled")
+  status             String         @default("UPCOMING")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  registrations      Registration[]
+  classes            Class[]
+
+  @@map("enrollment_periods")
+}
+
+model Registration {
+  id               String          @id @default(uuid())
+  registrationCode String          @unique @map("registration_code")
+  studentId        String          @map("student_id")
+  student          Student         @relation(fields: [studentId], references: [id])
+  periodId         String          @map("period_id")
+  period           EnrollmentPeriod @relation(fields: [periodId], references: [id])
+  registrationDate DateTime        @default(now()) @map("registration_date")
+  status           String          @default("PENDING")
+  note             String?
+  reviewedBy       String?         @map("reviewed_by")
+  reviewedAt       DateTime?       @map("reviewed_at")
+
+  invoice          TuitionInvoice?
+  enrollments      ClassEnrollment[]
+
+  @@map("registrations")
+}
+
+model TuitionInvoice {
+  id             String               @id @default(uuid())
+  invoiceCode    String               @unique @map("invoice_code")
+  registrationId String               @unique @map("registration_id")
+  registration   Registration         @relation(fields: [registrationId], references: [id])
+  totalAmount    Decimal              @default(0) @db.Decimal(12, 0) @map("total_amount")
+  paidAmount     Decimal              @default(0) @db.Decimal(12, 0) @map("paid_amount")
+  discountAmount Decimal              @default(0) @db.Decimal(12, 0) @map("discount_amount")
+  paymentStatus  String               @default("UNPAID") @map("payment_status")
+  dueDate        DateTime?            @map("due_date")
+  createdAt      DateTime             @default(now()) @map("created_at")
+
+  transactions   PaymentTransaction[]
+
+  @@map("tuition_invoices")
+}
+
+model PaymentTransaction {
+  id              String         @id @default(uuid())
+  invoiceId       String         @map("invoice_id")
+  invoice         TuitionInvoice @relation(fields: [invoiceId], references: [id])
+  transactionCode String         @unique @map("transaction_code")
+  amount          Decimal        @default(0) @db.Decimal(12, 0)
+  paymentMethod   String         @map("payment_method")
+  referenceNumber String?        @map("reference_number")
+  paymentDate     DateTime       @default(now()) @map("payment_date")
+  receiverId      String?        @map("receiver_id")
+  note            String?
+
+  @@map("payment_transactions")
+}
+
+model Class {
+  id                  String            @id @default(uuid())
+  periodId            String            @map("period_id")
+  period              EnrollmentPeriod  @relation(fields: [periodId], references: [id])
+  classCode           String            @unique @map("class_code")
+  name                String
+  room                String?
+  scheduleDescription String?           @map("schedule_description")
+  maxStudents         Int               @default(30) @map("max_students")
+  status              String            @default("PLANNING")
+  teacherId           String?           @map("teacher_id")
+  startDate           DateTime?         @map("start_date")
+  endDate             DateTime?         @map("end_date")
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  enrollments         ClassEnrollment[]
+  sessions            ClassSession[]
+  gradeComponents     GradeComponent[]
+
+  @@map("classes")
+}
+
+model ClassEnrollment {
+  id             String        @id @default(uuid())
+  classId        String        @map("class_id")
+  class          Class         @relation(fields: [classId], references: [id])
+  studentId      String        @map("student_id")
+  student        Student       @relation(fields: [studentId], references: [id])
+  registrationId String?       @map("registration_id")
+  registration   Registration? @relation(fields: [registrationId], references: [id])
+  enrolledAt     DateTime      @default(now()) @map("enrolled_at")
+  status         String        @default("ACTIVE")
+  finalScore     Decimal?      @db.Decimal(4, 2) @map("final_score")
+  academicResult String?       @map("academic_result")
+
+  attendances    Attendance[]
+  grades         Grade[]
+
+  @@unique([classId, studentId])
+  @@map("class_enrollments")
+}
+
+model ClassSession {
+  id            String       @id @default(uuid())
+  classId       String       @map("class_id")
+  class         Class        @relation(fields: [classId], references: [id])
+  sessionNumber Int          @map("session_number")
+  sessionDate   DateTime     @map("session_date")
+  topic         String?
+  status        String       @default("SCHEDULED")
+
+  attendances   Attendance[]
+
+  @@map("class_sessions")
+}
+
+model Attendance {
+  id           String          @id @default(uuid())
+  sessionId    String          @map("session_id")
+  session      ClassSession    @relation(fields: [sessionId], references: [id])
+  enrollmentId String          @map("enrollment_id")
+  enrollment   ClassEnrollment @relation(fields: [enrollmentId], references: [id])
+  status       String          @default("PRESENT")
+  note         String?
+  recordedAt   DateTime        @default(now()) @map("recorded_at")
+
+  @@unique([sessionId, enrollmentId])
+  @@map("attendances")
+}
+
+model GradeComponent {
+  id      String  @id @default(uuid())
+  classId String  @map("class_id")
+  class   Class   @relation(fields: [classId], references: [id])
+  name    String
+  weight  Decimal @db.Decimal(3, 2)
+  grades  Grade[]
+
+  @@map("grade_components")
+}
+
+model Grade {
+  id           String          @id @default(uuid())
+  componentId  String          @map("component_id")
+  component    GradeComponent  @relation(fields: [componentId], references: [id])
+  enrollmentId String          @map("enrollment_id")
+  enrollment   ClassEnrollment @relation(fields: [enrollmentId], references: [id])
+  score        Decimal         @db.Decimal(4, 2)
+  feedback     String?
+
+  @@unique([componentId, enrollmentId])
+  @@map("grades")
+}
