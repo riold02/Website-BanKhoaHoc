@@ -1,0 +1,23 @@
+{
+  "name": "course-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter @cms/backend --filter @cms/frontend dev",
+    "dev:backend": "pnpm --filter @cms/backend dev",
+    "dev:frontend": "pnpm --filter @cms/frontend dev",
+    "build": "pnpm --filter @cms/backend build && pnpm --filter @cms/frontend build",
+    "lint": "pnpm --recursive run lint",
+    "db:migrate": "pnpm --filter @cms/backend prisma migrate dev",
+    "db:push": "pnpm --filter @cms/backend prisma db push",
+    "db:seed": "pnpm --filter @cms/backend prisma db seed",
+    "db:studio": "pnpm --filter @cms/backend prisma studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@12.3.4"
+}

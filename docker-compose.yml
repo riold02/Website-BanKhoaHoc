@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cms_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: cms_user
+      POSTGRES_PASSWORD: cms_password_2026
+      POSTGRES_DB: cms_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cms_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cms_user -d cms_database"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: cms_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: "postgresql://cms_user:cms_password_2026@postgres:5432/cms_database?schema=public"
+      JWT_SECRET: "cms_super_secret_jwt_key_2026_dlu"
+      JWT_EXPIRES_IN: "1d"
+      REFRESH_TOKEN_SECRET: "cms_super_refresh_jwt_key_2026_dlu"
+      REFRESH_TOKEN_EXPIRES_IN: "7d"
+      FRONTEND_URL: "http://localhost:3000"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    networks:
+      - cms_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: cms_frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api/v1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    networks:
+      - cms_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  cms_network:
+    driver: bridge
