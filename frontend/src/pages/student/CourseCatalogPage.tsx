@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Clock,
-  Coins,
   BookOpen,
   CheckCircle,
   Calendar,
   Sparkles,
   ArrowRight,
   GraduationCap,
-  Users,
+  AlertCircle,
 } from 'lucide-react';
 import { courseApi } from '../../services/course.api';
+import { registrationApi } from '../../services/registration.api';
 import { Course, Category } from '../../types/course.types';
 import { formatVND, formatDate } from '../../utils/formatters';
 import { Badge } from '../../components/ui/Badge';
@@ -62,16 +62,46 @@ export const CourseCatalogPage: React.FC = () => {
     return matchCategory && matchSearch;
   });
 
+  // Registration state
+  const [registerCourse, setRegisterCourse] = useState<Course | null>(null);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registerError, setRegisterError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+
   const handleRegisterClick = (course: Course) => {
     if (!user) {
       navigate('/login', { state: { from: { pathname: `/courses` } } });
       return;
     }
-    // Member 2 enrollment registration flow
-    alert(
-      `Đã chuyển tiếp nguyện vọng đăng ký khóa học: ${course.title} (${course.courseCode}).\nTính năng nộp đơn chi tiết do Thành viên 2 (M04 Registration Management) phụ trách.`
-    );
+    if (user.role?.name !== 'STUDENT') {
+      alert('Chỉ tài khoản Học viên mới có thể đăng ký khóa học.');
+      return;
+    }
+    const openPeriods = (course.periods || []).filter((p) => p.status === 'OPEN');
+    if (openPeriods.length === 0) {
+      alert('Hiện chưa có đợt tuyển sinh nào đang mở cho khóa học này.');
+      return;
+    }
+    setRegisterCourse(course);
+    setSelectedPeriodId(openPeriods[0].id);
+    setRegisterError('');
+    setRegisterSuccess(false);
     setSelectedCourse(null);
+  };
+
+  const handleSubmitRegistration = async () => {
+    if (!selectedPeriodId) { setRegisterError('Vui lòng chọn đợt tuyển sinh.'); return; }
+    setIsRegistering(true);
+    setRegisterError('');
+    try {
+      await registrationApi.createRegistration({ periodId: selectedPeriodId });
+      setRegisterSuccess(true);
+    } catch (err: any) {
+      setRegisterError(err.message || 'Đăng ký thất bại, vui lòng thử lại.');
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -348,6 +378,107 @@ export const CourseCatalogPage: React.FC = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Registration Modal */}
+      <Modal
+        isOpen={Boolean(registerCourse)}
+        onClose={() => setRegisterCourse(null)}
+        title={`Đăng ký: ${registerCourse?.title || ''}`}
+        maxWidth="sm"
+      >
+        {registerCourse && (
+          <div className="space-y-4">
+            {registerSuccess ? (
+              <div className="py-6 text-center space-y-3">
+                <div className="h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-8 w-8 text-emerald-500" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Đăng ký thành công!</h3>
+                <p className="text-xs text-slate-500">
+                  Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt từ giáo vụ.
+                </p>
+                <div className="flex gap-2 justify-center pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setRegisterCourse(null)}>
+                    Đóng
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => { setRegisterCourse(null); window.location.href = '/my-registrations'; }}
+                    icon={<ArrowRight className="h-3.5 w-3.5" />}
+                  >
+                    Xem đơn của tôi
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-slate-600">
+                  Chọn đợt tuyển sinh bạn muốn đăng ký cho khóa học <strong>{registerCourse.title}</strong>:
+                </p>
+
+                <div className="space-y-2">
+                  {(registerCourse.periods || [])
+                    .filter((p) => p.status === 'OPEN')
+                    .map((p) => (
+                      <label
+                        key={p.id}
+                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                          selectedPeriodId === p.id
+                            ? 'border-blue-400 bg-blue-50'
+                            : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="period"
+                          value={p.id}
+                          checked={selectedPeriodId === p.id}
+                          onChange={() => setSelectedPeriodId(p.id)}
+                          className="mt-0.5 accent-blue-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-900">{p.name}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Hạn đăng ký: {formatDate(p.endRegistration)}
+                            {p.expectedStartDate && ` · Khai giảng: ${formatDate(p.expectedStartDate)}`}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Còn {p.maxCapacity - p.currentEnrolled}/{p.maxCapacity} chỗ
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold font-mono text-emerald-700 shrink-0">
+                          {formatVND(p.tuitionFee)}
+                        </span>
+                      </label>
+                    ))}
+                </div>
+
+                {registerError && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {registerError}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" size="md" onClick={() => setRegisterCourse(null)}>
+                    Hủy
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSubmitRegistration}
+                    icon={<ArrowRight className="h-4 w-4" />}
+                  >
+                    {isRegistering ? 'Đang gửi...' : 'Xác nhận Đăng ký'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </Modal>

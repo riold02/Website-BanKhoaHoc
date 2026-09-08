@@ -41,18 +41,30 @@ export const AdminSidebar: React.FC = () => {
           },
         ]
       : []),
-    // Placeholder modules for Members 2, 3, 4 with tags
+    // Member 2 Modules (M03, M04, M11)
     {
-      label: 'Đợt Tuyển sinh & Đơn',
-      path: '/admin/periods',
+      label: 'Đợt Tuyển sinh',
+      path: '/admin/enrollment-periods',
       icon: <CalendarDays className="h-4 w-4" />,
-      badge: 'TV 2',
-      isComingSoon: true,
+      badge: 'M03',
     },
+    {
+      label: 'Xét duyệt Đơn ĐK',
+      path: '/admin/registrations',
+      icon: <GraduationCap className="h-4 w-4" />,
+      badge: 'M04',
+    },
+    {
+      label: 'Quản lý Học viên',
+      path: '/admin/students',
+      icon: <Users className="h-4 w-4" />,
+      badge: 'M11',
+    },
+    // Placeholder modules for Members 3, 4
     {
       label: 'Lớp học & Điểm danh',
       path: '/admin/classes',
-      icon: <GraduationCap className="h-4 w-4" />,
+      icon: <Receipt className="h-4 w-4" />,
       badge: 'TV 3',
       isComingSoon: true,
     },
