@@ -1,8 +1,16 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, GraduationCap, LogIn, LogOut, ShieldCheck, User } from 'lucide-react';
-import { useAuth } from '../../context/auth.context';
-import { Button } from '../ui/Button';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  BookOpen,
+  CalendarDays,
+  GraduationCap,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  User,
+} from "lucide-react";
+import { useAuth } from "../../context/auth.context";
+import { Button } from "../ui/Button";
 
 export const StudentNavbar: React.FC = () => {
   const { user, role, logout } = useAuth();
@@ -39,7 +47,9 @@ export const StudentNavbar: React.FC = () => {
             href="#features"
             onClick={(e) => {
               e.preventDefault();
-              alert('Thông tin giới thiệu trung tâm đào tạo ngắn hạn ĐH Đà Lạt.');
+              alert(
+                "Thông tin giới thiệu trung tâm đào tạo ngắn hạn ĐH Đà Lạt.",
+              );
             }}
             className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
           >
@@ -49,7 +59,9 @@ export const StudentNavbar: React.FC = () => {
             href="#faq"
             onClick={(e) => {
               e.preventDefault();
-              alert('Hotline tư vấn tuyển sinh: 0263.3822.246 - Email: daotao@dlu.edu.vn');
+              alert(
+                "Hotline tư vấn tuyển sinh: 0263.3822.246 - Email: daotao@dlu.edu.vn",
+              );
             }}
             className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
           >
@@ -61,11 +73,21 @@ export const StudentNavbar: React.FC = () => {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              {(role === 'ADMIN' || role === 'STAFF') && (
+              {role === "STUDENT" && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/admin')}
+                  onClick={() => navigate("/my-learning")}
+                  icon={<CalendarDays className="h-4 w-4 text-blue-600" />}
+                >
+                  Cổng học tập
+                </Button>
+              )}
+              {(role === "ADMIN" || role === "STAFF") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/admin")}
                   icon={<ShieldCheck className="h-4 w-4 text-blue-600" />}
                 >
                   Vào Trang Quản Trị
@@ -74,7 +96,11 @@ export const StudentNavbar: React.FC = () => {
 
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
                 <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
-                  {user.profile?.fullName ? user.profile.fullName.charAt(0) : <User className="h-4 w-4" />}
+                  {user.profile?.fullName ? (
+                    user.profile.fullName.charAt(0)
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs font-semibold text-slate-800 leading-tight">
@@ -98,7 +124,7 @@ export const StudentNavbar: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate("/login")}
                 icon={<LogIn className="h-4 w-4" />}
               >
                 Đăng Nhập
@@ -106,7 +132,7 @@ export const StudentNavbar: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate("/register")}
               >
                 Đăng Ký Học Viên
               </Button>
