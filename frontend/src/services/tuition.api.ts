@@ -33,6 +33,7 @@ export interface TuitionInvoiceApiItem {
   };
   transactions?: Array<{
     id: string;
+    amount?: number | string | null;
     paymentDate?: string | null;
     paymentMethod?: TuitionPaymentMethod | null;
     referenceNumber?: string | null;

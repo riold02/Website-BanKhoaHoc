@@ -29,6 +29,14 @@ interface TuitionInvoice {
   lastPaymentDate?: string;
   paymentMethod?: string;
   note?: string;
+  transactions: Array<{
+    id: string;
+    amount: number;
+    paymentDate?: string | null;
+    paymentMethod?: string | null;
+    referenceNumber?: string | null;
+    note?: string | null;
+  }>;
 }
 
 const STATUS_META: Record<InvoiceStatus, { label: string; className: string }> = {
@@ -60,6 +68,8 @@ export const TuitionManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]['key']>('ALL');
   const [toast, setToast] = useState<string | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<TuitionInvoice | null>(null);
+  const [selectedNoteInvoice, setSelectedNoteInvoice] = useState<TuitionInvoice | null>(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     paymentMethod: 'CASH' as 'CASH' | 'BANK_TRANSFER',
@@ -67,21 +77,40 @@ export const TuitionManagementPage: React.FC = () => {
     note: '',
   });
 
-  const mapInvoice = (item: TuitionInvoiceApiItem): TuitionInvoice => ({
-    id: item.id,
-    invoiceCode: item.invoiceCode,
-    studentName: item.registration?.student?.user?.profile?.fullName || 'Không rõ',
-    studentCode: item.registration?.student?.studentCode || '---',
-    courseName: item.registration?.period?.course?.title || 'Không rõ',
-    periodName: item.registration?.period?.name || '---',
-    totalAmount: Number(item.totalAmount) || 0,
-    paidAmount: Number(item.paidAmount) || 0,
-    dueDate: item.dueDate || undefined,
-    paymentStatus: (item.paymentStatus as InvoiceStatus) || 'UNPAID',
-    lastPaymentDate: item.transactions?.[0]?.paymentDate || undefined,
-    paymentMethod: item.transactions?.[0]?.paymentMethod || 'CASH',
-    note: item.transactions?.[0]?.note || undefined,
-  });
+  const mapInvoice = (item: TuitionInvoiceApiItem): TuitionInvoice => {
+    const uniqueTransactions = (item.transactions ?? []).reduce<Array<{ id: string; amount: number; paymentDate?: string | null; paymentMethod?: string | null; referenceNumber?: string | null; note?: string | null }>>((acc, transaction) => {
+      if (!transaction?.id || acc.some((current) => current.id === transaction.id)) {
+        return acc;
+      }
+
+      acc.push({
+        id: transaction.id,
+        amount: Number(transaction.amount) || 0,
+        paymentDate: transaction.paymentDate || undefined,
+        paymentMethod: transaction.paymentMethod || undefined,
+        referenceNumber: transaction.referenceNumber || undefined,
+        note: transaction.note || undefined,
+      });
+      return acc;
+    }, []);
+
+    return {
+      id: item.id,
+      invoiceCode: item.invoiceCode,
+      studentName: item.registration?.student?.user?.profile?.fullName || 'Không rõ',
+      studentCode: item.registration?.student?.studentCode || '---',
+      courseName: item.registration?.period?.course?.title || 'Không rõ',
+      periodName: item.registration?.period?.name || '---',
+      totalAmount: Number(item.totalAmount) || 0,
+      paidAmount: Number(item.paidAmount) || 0,
+      dueDate: item.dueDate || undefined,
+      paymentStatus: (item.paymentStatus as InvoiceStatus) || 'UNPAID',
+      lastPaymentDate: uniqueTransactions[0]?.paymentDate || undefined,
+      paymentMethod: uniqueTransactions[0]?.paymentMethod || 'CASH',
+      note: uniqueTransactions[0]?.note || undefined,
+      transactions: uniqueTransactions,
+    };
+  };
 
   const loadInvoices = async () => {
     setIsLoading(true);
@@ -146,8 +175,12 @@ export const TuitionManagementPage: React.FC = () => {
     });
   };
 
+  const openNoteHistory = (invoice: TuitionInvoice) => {
+    setSelectedNoteInvoice(invoice);
+  };
+
   const submitPayment = async () => {
-    if (!selectedInvoice) return;
+    if (!selectedInvoice || isSubmittingPayment) return;
 
     const amount = Number(paymentForm.amount);
     const remaining = Math.max(0, selectedInvoice.totalAmount - selectedInvoice.paidAmount);
@@ -167,6 +200,8 @@ export const TuitionManagementPage: React.FC = () => {
       return;
     }
 
+    setIsSubmittingPayment(true);
+
     try {
       await tuitionApi.recordPayment(selectedInvoice.id, {
         amount,
@@ -180,6 +215,8 @@ export const TuitionManagementPage: React.FC = () => {
       setToast('Đã ghi nhận thanh toán thành công');
     } catch (error: any) {
       setToast(error?.message || 'Ghi nhận thanh toán thất bại');
+    } finally {
+      setIsSubmittingPayment(false);
     }
   };
 
@@ -358,10 +395,74 @@ export const TuitionManagementPage: React.FC = () => {
               </button>
               <button
                 onClick={submitPayment}
-                className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                disabled={isSubmittingPayment}
+                className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
               >
-                Xác nhận thanh toán
+                {isSubmittingPayment ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedNoteInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Ghi chú thanh toán</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-900">{selectedNoteInvoice.studentName}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedNoteInvoice(null)}
+                className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+              <div className="flex items-center justify-between">
+                <span>Mã hóa đơn</span>
+                <span className="font-semibold text-slate-800">{selectedNoteInvoice.invoiceCode}</span>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              {selectedNoteInvoice.transactions.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500 text-center">
+                  Chưa có ghi chú nào cho hóa đơn này.
+                </div>
+              ) : (
+                selectedNoteInvoice.transactions.map((transaction) => {
+                  const paymentDate = transaction.paymentDate ? new Date(transaction.paymentDate) : null;
+                  const displayDate = paymentDate ? paymentDate.toLocaleDateString('vi-VN') : '---';
+                  const displayTime = paymentDate ? paymentDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '---';
+                  const content = transaction.note?.trim() ? transaction.note.trim() : 'Không có nội dung ghi chú';
+
+                  return (
+                    <div key={transaction.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500">
+                        <span>{displayDate}</span>
+                        <span>{displayTime}</span>
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="text-xs font-medium text-slate-600">Nội dung ghi chú</span>
+                        <span className="text-xs font-semibold text-emerald-700">{formatVND(transaction.amount)}</span>
+                      </div>
+
+                      <p className="mt-2 text-sm font-medium text-slate-800">{content}</p>
+
+                      {transaction.referenceNumber && (
+                        <div className="mt-2 text-[11px] text-slate-500">
+                          Mã tham chiếu: <span className="font-semibold text-slate-700">{transaction.referenceNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -380,6 +481,7 @@ export const TuitionManagementPage: React.FC = () => {
                 <th className="text-left px-4 py-3 font-semibold text-slate-600">Còn nợ</th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-600">Hạn nộp</th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-600">Trạng thái</th>
+                <th className="text-left px-4 py-3 font-semibold text-slate-600">Ghi chú</th>
                 <th className="text-center px-4 py-3 font-semibold text-slate-600">Thao tác</th>
               </tr>
             </thead>
@@ -425,6 +527,14 @@ export const TuitionManagementPage: React.FC = () => {
                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusMeta.className}`}>
                           {statusMeta.label}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => openNoteHistory(invoice)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition"
+                        >
+                          Xem
+                        </button>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
