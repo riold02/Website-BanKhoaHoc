@@ -73,7 +73,6 @@ export const AdminSidebar: React.FC = () => {
       path: '/admin/tuition',
       icon: <Receipt className="h-4 w-4" />,
       badge: 'TV 4',
-      isComingSoon: true,
     },
   ];
 

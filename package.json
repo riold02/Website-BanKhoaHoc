@@ -7,7 +7,7 @@
     "dev:backend": "pnpm --filter @cms/backend dev",
     "dev:frontend": "pnpm --filter @cms/frontend dev",
     "build": "pnpm --filter @cms/backend build && pnpm --filter @cms/frontend build",
-    "lint": "pnpm --recursive run lint",
+    "lint": "pnpm --filter @cms/backend build && pnpm --filter @cms/frontend build",
     "db:migrate": "pnpm --filter @cms/backend prisma migrate dev",
     "db:push": "pnpm --filter @cms/backend prisma db push",
     "db:seed": "pnpm --filter @cms/backend prisma db seed",

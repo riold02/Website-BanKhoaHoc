@@ -5,6 +5,7 @@ import { courseRoutes } from './course.routes';
 import { enrollmentPeriodRoutes } from './enrollment-period.routes';
 import { registrationRoutes } from './registration.routes';
 import { studentRoutes } from './student.routes';
+import { tuitionRoutes } from './tuition.routes';
 
 const router = Router();
 
@@ -27,5 +28,8 @@ router.use('/courses', courseRoutes);
 router.use('/enrollment-periods', enrollmentPeriodRoutes);
 router.use('/registrations', registrationRoutes);
 router.use('/students', studentRoutes);
+
+// Member 4 Modules (M06)
+router.use('/tuitions', tuitionRoutes);
 
 export const apiRoutes = router;

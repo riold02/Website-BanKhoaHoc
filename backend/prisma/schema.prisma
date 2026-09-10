@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -116,7 +116,7 @@ model EnrollmentPeriod {
   startRegistration  DateTime       @map("start_registration")
   endRegistration    DateTime       @map("end_registration")
   expectedStartDate  DateTime?      @map("expected_start_date")
-  tuitionFee         Int            @default(0) @map("tuition_fee") // VND nguyên đồng
+  tuitionFee         Decimal        @default(0) @db.Decimal(12, 0) @map("tuition_fee") // VND nguyên đồng
   maxCapacity        Int            @map("max_capacity")
   currentEnrolled    Int            @default(0) @map("current_enrolled")
   status             String         @default("UPCOMING") // UPCOMING | OPEN | CLOSED | CANCELLED
@@ -157,9 +157,9 @@ model TuitionInvoice {
   invoiceCode    String               @unique @map("invoice_code")
   registrationId String               @unique @map("registration_id")
   registration   Registration         @relation(fields: [registrationId], references: [id])
-  totalAmount    Int                  @default(0) @map("total_amount")
-  paidAmount     Int                  @default(0) @map("paid_amount")
-  discountAmount Int                  @default(0) @map("discount_amount")
+  totalAmount    Decimal              @default(0) @db.Decimal(12, 0) @map("total_amount")
+  paidAmount     Decimal              @default(0) @db.Decimal(12, 0) @map("paid_amount")
+  discountAmount Decimal              @default(0) @db.Decimal(12, 0) @map("discount_amount")
   paymentStatus  String               @default("UNPAID") @map("payment_status") // UNPAID | PARTIAL | PAID
   dueDate        DateTime?            @map("due_date")
   createdAt      DateTime             @default(now()) @map("created_at")
@@ -174,7 +174,7 @@ model PaymentTransaction {
   invoiceId       String         @map("invoice_id")
   invoice         TuitionInvoice @relation(fields: [invoiceId], references: [id])
   transactionCode String         @unique @map("transaction_code")
-  amount          Int            @default(0)
+  amount          Decimal        @default(0) @db.Decimal(12, 0)
   paymentMethod   String         @map("payment_method") // CASH | BANK_TRANSFER
   referenceNumber String?        @map("reference_number")
   paymentDate     DateTime       @default(now()) @map("payment_date")

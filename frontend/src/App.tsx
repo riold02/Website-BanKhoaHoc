@@ -10,6 +10,7 @@ import { UserManagementPage } from './pages/admin/UserManagementPage';
 import { EnrollmentPeriodManagementPage } from './pages/admin/EnrollmentPeriodManagementPage';
 import { RegistrationManagementPage } from './pages/admin/RegistrationManagementPage';
 import { StudentManagementPage } from './pages/admin/StudentManagementPage';
+import { TuitionManagementPage } from './pages/admin/TuitionManagementPage';
 import { AdminLayout } from './layouts/AdminLayout';
 import { StudentLayout } from './layouts/StudentLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
@@ -61,6 +62,8 @@ export const App: React.FC = () => {
         <Route path="registrations" element={<RegistrationManagementPage />} />
         {/* Member 2 - M11: Quản lý Học viên */}
         <Route path="students" element={<StudentManagementPage />} />
+        {/* Member 4 - M06: Hóa đơn & công nợ */}
+        <Route path="tuition" element={<TuitionManagementPage />} />
       </Route>
 
       {/* Fallback */}

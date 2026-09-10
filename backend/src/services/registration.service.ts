@@ -125,16 +125,39 @@ export class RegistrationService {
         },
       });
 
-      // Nếu APPROVED: tăng số học viên đã đăng ký của đợt
+      // Nếu APPROVED: tăng số học viên đã đăng ký của đợt và tạo hóa đơn học phí
       if (status === 'APPROVED') {
         const period = await tx.enrollmentPeriod.findUnique({ where: { id: reg.periodId } });
         if (period && period.currentEnrolled >= period.maxCapacity) {
           throw new AppError('Đợt tuyển sinh đã đủ chỉ tiêu, không thể duyệt thêm', 400, 'PERIOD_FULL');
         }
+
         await tx.enrollmentPeriod.update({
           where: { id: reg.periodId },
           data: { currentEnrolled: { increment: 1 } },
         });
+
+        const existingInvoice = await tx.tuitionInvoice.findUnique({
+          where: { registrationId: reg.id },
+        });
+
+        if (!existingInvoice) {
+          const invoiceCode = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14);
+
+          await tx.tuitionInvoice.create({
+            data: {
+              invoiceCode,
+              registrationId: reg.id,
+              totalAmount: period?.tuitionFee ?? 0,
+              paidAmount: 0,
+              discountAmount: 0,
+              paymentStatus: 'UNPAID',
+              dueDate,
+            },
+          });
+        }
       }
 
       return updated;
