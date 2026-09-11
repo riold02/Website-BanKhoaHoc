@@ -1,8 +1,12 @@
-import { prisma } from '../config/database';
-import { AppError } from '../utils/response.util';
+import { prisma } from "../config/database";
+import { AppError } from "../utils/response.util";
 
 export class StudentService {
-  async listStudents(query: { search?: string; page?: number; limit?: number }) {
+  async listStudents(query: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.max(1, Math.min(100, query.limit || 10));
     const skip = (page - 1) * limit;
@@ -24,7 +28,7 @@ export class StudentService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           user: {
             include: {
@@ -49,7 +53,7 @@ export class StudentService {
       include: {
         user: { include: { profile: true, role: true } },
         registrations: {
-          orderBy: { registrationDate: 'desc' },
+          orderBy: { registrationDate: "desc" },
           include: {
             period: {
               include: {
@@ -61,7 +65,8 @@ export class StudentService {
         },
       },
     });
-    if (!student) throw new AppError('Học viên không tồn tại', 404, 'STUDENT_NOT_FOUND');
+    if (!student)
+      throw new AppError("Học viên không tồn tại", 404, "STUDENT_NOT_FOUND");
     return student;
   }
 
@@ -71,7 +76,7 @@ export class StudentService {
       include: {
         user: { include: { profile: true, role: true } },
         registrations: {
-          orderBy: { registrationDate: 'desc' },
+          orderBy: { registrationDate: "desc" },
           include: {
             period: {
               include: {
@@ -82,8 +87,146 @@ export class StudentService {
         },
       },
     });
-    if (!student) throw new AppError('Không tìm thấy hồ sơ học viên cho tài khoản này', 404, 'STUDENT_NOT_FOUND');
+    if (!student)
+      throw new AppError(
+        "Không tìm thấy hồ sơ học viên cho tài khoản này",
+        404,
+        "STUDENT_NOT_FOUND",
+      );
     return student;
+  }
+
+  async getMySchedule(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student)
+      throw new AppError(
+        "Không tìm thấy hồ sơ học viên cho tài khoản này",
+        404,
+        "STUDENT_NOT_FOUND",
+      );
+
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: { studentId: student.id, status: { in: ["ACTIVE", "COMPLETED"] } },
+      include: {
+        class: {
+          include: {
+            period: { include: { course: true } },
+            sessions: {
+              where: { status: { not: "CANCELLED" } },
+              orderBy: { sessionNumber: "asc" },
+            },
+          },
+        },
+      },
+      orderBy: { enrolledAt: "desc" },
+    });
+
+    return enrollments.map((enrollment) => ({
+      enrollmentId: enrollment.id,
+      enrollmentStatus: enrollment.status,
+      class: enrollment.class,
+    }));
+  }
+
+  async getMyAttendance(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student)
+      throw new AppError(
+        "Không tìm thấy hồ sơ học viên cho tài khoản này",
+        404,
+        "STUDENT_NOT_FOUND",
+      );
+
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: { studentId: student.id, status: { in: ["ACTIVE", "COMPLETED"] } },
+      include: {
+        class: { include: { period: { include: { course: true } } } },
+      },
+      orderBy: { enrolledAt: "desc" },
+    });
+
+    return Promise.all(
+      enrollments.map(async (enrollment) => {
+        const sessions = await prisma.classSession.findMany({
+          where: { classId: enrollment.classId, status: { not: "CANCELLED" } },
+          orderBy: { sessionNumber: "asc" },
+          include: { attendances: { where: { enrollmentId: enrollment.id } } },
+        });
+        const attendanceRecords = sessions.map((session) => ({
+          sessionId: session.id,
+          sessionNumber: session.sessionNumber,
+          sessionDate: session.sessionDate,
+          topic: session.topic,
+          sessionStatus: session.status,
+          attendance: session.attendances[0] || null,
+        }));
+        const absenceCount = attendanceRecords.filter(
+          (record) => record.attendance?.status === "ABSENT",
+        ).length;
+        return {
+          enrollmentId: enrollment.id,
+          class: enrollment.class,
+          sessions: attendanceRecords,
+          summary: {
+            totalSessions: sessions.length,
+            recordedSessions: attendanceRecords.filter(
+              (record) => record.attendance,
+            ).length,
+            absenceCount,
+            absenceRate: sessions.length
+              ? Math.round((absenceCount / sessions.length) * 10000) / 100
+              : 0,
+          },
+        };
+      }),
+    );
+  }
+
+  async getMyGrades(userId: string) {
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student)
+      throw new AppError(
+        "Không tìm thấy hồ sơ học viên cho tài khoản này",
+        404,
+        "STUDENT_NOT_FOUND",
+      );
+
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: { studentId: student.id, status: { in: ["ACTIVE", "COMPLETED"] } },
+      include: {
+        class: {
+          include: {
+            period: { include: { course: true } },
+            gradeComponents: { orderBy: { id: "asc" } },
+          },
+        },
+        grades: {
+          include: { component: true },
+          orderBy: { component: { id: "asc" } },
+        },
+      },
+      orderBy: { enrolledAt: "desc" },
+    });
+
+    return enrollments.map((enrollment) => ({
+      enrollmentId: enrollment.id,
+      enrollmentStatus: enrollment.status,
+      finalScore: enrollment.finalScore,
+      academicResult: enrollment.academicResult,
+      class: enrollment.class,
+      grades: enrollment.class.gradeComponents.map((component) => {
+        const grade = enrollment.grades.find(
+          (item) => item.componentId === component.id,
+        );
+        return {
+          componentId: component.id,
+          name: component.name,
+          weight: component.weight,
+          score: grade?.score ?? null,
+          feedback: grade?.feedback ?? null,
+        };
+      }),
+    }));
   }
 
   async updateStudent(
@@ -93,18 +236,25 @@ export class StudentService {
       birthDate?: string | null;
       gender?: string | null;
       educationLevel?: string | null;
-    }
+    },
   ) {
     const student = await prisma.student.findUnique({ where: { id } });
-    if (!student) throw new AppError('Học viên không tồn tại', 404, 'STUDENT_NOT_FOUND');
+    if (!student)
+      throw new AppError("Học viên không tồn tại", 404, "STUDENT_NOT_FOUND");
 
     return prisma.student.update({
       where: { id },
       data: {
-        ...(data.idCardNumber !== undefined ? { idCardNumber: data.idCardNumber } : {}),
-        ...(data.birthDate !== undefined ? { birthDate: data.birthDate ? new Date(data.birthDate) : null } : {}),
+        ...(data.idCardNumber !== undefined
+          ? { idCardNumber: data.idCardNumber }
+          : {}),
+        ...(data.birthDate !== undefined
+          ? { birthDate: data.birthDate ? new Date(data.birthDate) : null }
+          : {}),
         ...(data.gender !== undefined ? { gender: data.gender } : {}),
-        ...(data.educationLevel !== undefined ? { educationLevel: data.educationLevel } : {}),
+        ...(data.educationLevel !== undefined
+          ? { educationLevel: data.educationLevel }
+          : {}),
       },
       include: { user: { include: { profile: true } } },
     });

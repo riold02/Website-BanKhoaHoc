@@ -117,6 +117,7 @@ model EnrollmentPeriod {
   endRegistration    DateTime       @map("end_registration")
   expectedStartDate  DateTime?      @map("expected_start_date")
   tuitionFee         Int            @default(0) @map("tuition_fee") // VND nguyên đồng
+  minCapacity        Int            @default(5)  @map("min_capacity")  // Sĩ số tối thiểu để mở lớp
   maxCapacity        Int            @map("max_capacity")
   currentEnrolled    Int            @default(0) @map("current_enrolled")
   status             String         @default("UPCOMING") // UPCOMING | OPEN | CLOSED | CANCELLED
