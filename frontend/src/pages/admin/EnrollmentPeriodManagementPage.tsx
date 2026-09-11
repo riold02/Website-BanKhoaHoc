@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+
 import {
   CalendarDays, Plus, Search, RefreshCw, ChevronLeft, ChevronRight,
   Users, Clock, Edit3, ToggleLeft, ToggleRight, X, AlertCircle,
@@ -34,6 +35,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(''); // giá trị thực gửi API
   const [filterStatus, setFilterStatus] = useState('');
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [page, setPage] = useState(1);
@@ -50,6 +52,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     try {
       const result = await enrollmentPeriodApi.getPeriods({
         status: filterStatus || undefined,
+        search: debouncedSearch || undefined,
         page,
         limit: 10,
       });
@@ -60,7 +63,18 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filterStatus, page]);
+  }, [filterStatus, debouncedSearch, page]);
+
+  // Debounce: đợi 400ms sau khi user ngừng gõ mới cập nhật debouncedSearch
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1); // Reset về trang 1 khi thực sự gửi query mới
+    }, 400);
+  };
 
   useEffect(() => {
     loadPeriods();
@@ -154,14 +168,8 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     }
   };
 
-  const filtered = periods.filter((p) => {
-    if (!search) return true;
-    return (
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.periodCode.toLowerCase().includes(search.toLowerCase()) ||
-      p.course?.title?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  // Search đã được xử lý server-side, periods trả về đã được lọc
+  const filtered = periods;
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -191,7 +199,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
             type="text"
             placeholder="Tìm đợt tuyển sinh, mã đợt, tên khóa học..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
         </div>

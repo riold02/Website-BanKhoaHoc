@@ -39,6 +39,7 @@ export const periodQuerySchema = z.object({
   query: z.object({
     courseId: z.string().uuid().optional(),
     status: z.enum(['UPCOMING', 'OPEN', 'CLOSED', 'CANCELLED']).optional(),
+    search: z.string().optional(),
     page: z.string().optional(),
     limit: z.string().optional(),
   }),

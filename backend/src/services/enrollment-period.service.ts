@@ -5,6 +5,7 @@ export class EnrollmentPeriodService {
   async listPeriods(query: {
     courseId?: string;
     status?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) {
@@ -15,6 +16,15 @@ export class EnrollmentPeriodService {
     const where: any = {};
     if (query.courseId) where.courseId = query.courseId;
     if (query.status) where.status = query.status;
+    // Server-side search: tìm theo tên đợt, mã đợt hoặc tên khóa học
+    if (query.search && query.search.trim()) {
+      const keyword = query.search.trim();
+      where.OR = [
+        { name:       { contains: keyword, mode: 'insensitive' } },
+        { periodCode: { contains: keyword, mode: 'insensitive' } },
+        { course: { title: { contains: keyword, mode: 'insensitive' } } },
+      ];
+    }
 
     const [total, periods] = await Promise.all([
       prisma.enrollmentPeriod.count({ where }),
