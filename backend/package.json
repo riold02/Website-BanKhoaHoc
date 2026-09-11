@@ -6,6 +6,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "test": "jest --config jest.config.json --forceExit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
@@ -28,9 +29,12 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.12.12",
+    "jest": "^30.5.1",
     "prisma": "^5.14.0",
+    "ts-jest": "^29.4.12",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }
