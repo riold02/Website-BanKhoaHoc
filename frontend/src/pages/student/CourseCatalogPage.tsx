@@ -10,6 +10,10 @@ import {
   ArrowRight,
   GraduationCap,
   AlertCircle,
+  User,
+  Phone,
+  CreditCard,
+  ShieldCheck,
 } from 'lucide-react';
 import { courseApi } from '../../services/course.api';
 import { registrationApi } from '../../services/registration.api';
@@ -65,6 +69,8 @@ export const CourseCatalogPage: React.FC = () => {
   // Registration state
   const [registerCourse, setRegisterCourse] = useState<Course | null>(null);
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [regNote, setRegNote] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [registerSuccess, setRegisterSuccess] = useState(false);
@@ -85,6 +91,8 @@ export const CourseCatalogPage: React.FC = () => {
     }
     setRegisterCourse(course);
     setSelectedPeriodId(openPeriods[0].id);
+    setRegNote('');
+    setAgreedToTerms(false);
     setRegisterError('');
     setRegisterSuccess(false);
     setSelectedCourse(null);
@@ -92,10 +100,14 @@ export const CourseCatalogPage: React.FC = () => {
 
   const handleSubmitRegistration = async () => {
     if (!selectedPeriodId) { setRegisterError('Vui lòng chọn đợt tuyển sinh.'); return; }
+    if (!agreedToTerms) { setRegisterError('Bạn cần đồng ý với nội quy trung tâm trước khi gửi đơn.'); return; }
     setIsRegistering(true);
     setRegisterError('');
     try {
-      await registrationApi.createRegistration({ periodId: selectedPeriodId });
+      await registrationApi.createRegistration({
+        periodId: selectedPeriodId,
+        note: regNote.trim() || undefined,
+      });
       setRegisterSuccess(true);
     } catch (err: any) {
       setRegisterError(err.message || 'Đăng ký thất bại, vui lòng thử lại.');
@@ -382,12 +394,12 @@ export const CourseCatalogPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Registration Modal */}
+      {/* Registration Modal — §18.4 full form */}
       <Modal
         isOpen={Boolean(registerCourse)}
         onClose={() => setRegisterCourse(null)}
-        title={`Đăng ký: ${registerCourse?.title || ''}`}
-        maxWidth="sm"
+        title={`Xác nhận Đăng ký Khóa Học`}
+        maxWidth="md"
       >
         {registerCourse && (
           <div className="space-y-4">
@@ -396,9 +408,9 @@ export const CourseCatalogPage: React.FC = () => {
                 <div className="h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
                   <CheckCircle className="h-8 w-8 text-emerald-500" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Đăng ký thành công!</h3>
-                <p className="text-xs text-slate-500">
-                  Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt từ giáo vụ.
+                <h3 className="text-sm font-bold text-slate-900">Gửi đơn thành công!</h3>
+                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                  Đơn đăng ký của bạn đã được ghi nhận và đang chờ xét duyệt từ giáo vụ đào tạo.
                 </p>
                 <div className="flex gap-2 justify-center pt-2">
                   <Button variant="outline" size="sm" onClick={() => setRegisterCourse(null)}>
@@ -407,7 +419,7 @@ export const CourseCatalogPage: React.FC = () => {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => { setRegisterCourse(null); window.location.href = '/my-registrations'; }}
+                    onClick={() => { setRegisterCourse(null); navigate('/my-registrations'); }}
                     icon={<ArrowRight className="h-3.5 w-3.5" />}
                   >
                     Xem đơn của tôi
@@ -416,46 +428,125 @@ export const CourseCatalogPage: React.FC = () => {
               </div>
             ) : (
               <>
-                <p className="text-xs text-slate-600">
-                  Chọn đợt tuyển sinh bạn muốn đăng ký cho khóa học <strong>{registerCourse.title}</strong>:
-                </p>
-
-                <div className="space-y-2">
-                  {(registerCourse.periods || [])
-                    .filter((p) => p.status === 'OPEN')
-                    .map((p) => (
-                      <label
-                        key={p.id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                          selectedPeriodId === p.id
-                            ? 'border-blue-400 bg-blue-50'
-                            : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="period"
-                          value={p.id}
-                          checked={selectedPeriodId === p.id}
-                          onChange={() => setSelectedPeriodId(p.id)}
-                          className="mt-0.5 accent-blue-600"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-slate-900">{p.name}</p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Hạn đăng ký: {formatDate(p.endRegistration)}
-                            {p.expectedStartDate && ` · Khai giảng: ${formatDate(p.expectedStartDate)}`}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            Còn {p.maxCapacity - p.currentEnrolled}/{p.maxCapacity} chỗ
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold font-mono text-emerald-700 shrink-0">
-                          {formatVND(p.tuitionFee)}
-                        </span>
-                      </label>
-                    ))}
+                {/* Course info header */}
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-100">
+                  <p className="text-[11px] font-semibold text-blue-500 uppercase tracking-wider">Khóa học</p>
+                  <p className="text-sm font-bold text-slate-900 mt-0.5">{registerCourse.title}</p>
                 </div>
+
+                {/* Student info — pre-filled from profile */}
+                <div>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Thông tin xác nhận đăng ký</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                      <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400">Họ và tên</p>
+                        <p className="text-xs font-semibold text-slate-800 truncate">
+                          {user?.profile?.fullName || user?.username || '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                      <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400">Số điện thoại</p>
+                        <p className="text-xs font-semibold text-slate-800 truncate">
+                          {user?.profile?.phone || 'Chưa cập nhật'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                      <CreditCard className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400">CCCD / Mã học viên</p>
+                        <p className="text-xs font-semibold text-slate-800 truncate">
+                          {user?.student?.idCardNumber || user?.student?.studentCode || '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                      <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400">Email</p>
+                        <p className="text-xs font-semibold text-slate-800 truncate">
+                          {user?.email || '—'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Period selection */}
+                <div>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Chọn đợt tuyển sinh <span className="text-rose-500">*</span></p>
+                  <div className="space-y-2">
+                    {(registerCourse.periods || [])
+                      .filter((p) => p.status === 'OPEN')
+                      .map((p) => (
+                        <label
+                          key={p.id}
+                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                            selectedPeriodId === p.id
+                              ? 'border-blue-400 bg-blue-50 ring-1 ring-blue-300'
+                              : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="period"
+                            value={p.id}
+                            checked={selectedPeriodId === p.id}
+                            onChange={() => setSelectedPeriodId(p.id)}
+                            className="mt-0.5 accent-blue-600"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-slate-900">{p.name}</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Hạn đăng ký: {formatDate(p.endRegistration)}
+                              {p.expectedStartDate && ` · Khai giảng: ${formatDate(p.expectedStartDate)}`}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              Còn {p.maxCapacity - p.currentEnrolled}/{p.maxCapacity} chỗ
+                            </p>
+                          </div>
+                          <span className="text-xs font-bold font-mono text-emerald-700 shrink-0">
+                            {formatVND(p.tuitionFee)}
+                          </span>
+                        </label>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Note textarea */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                    Ghi chú thêm <span className="text-slate-400 font-normal normal-case">(không bắt buộc)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={regNote}
+                    onChange={(e) => setRegNote(e.target.value)}
+                    placeholder='Ví dụ: "Tôi muốn học ca tối thứ 2-4-6"'
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none placeholder-slate-400"
+                  />
+                </div>
+
+                {/* Terms checkbox */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                  agreedToTerms ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 accent-emerald-600 h-3.5 w-3.5"
+                  />
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Tôi cam kết thông tin cá nhân nêu trên là chính xác và đồng ý tuân thủ{' '}
+                    <span className="font-semibold text-slate-800">nội quy đào tạo của Trung tâm Đào tạo Đại học Đà Lạt (DLU)</span>.
+                  </p>
+                </label>
 
                 {registerError && (
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
@@ -465,16 +556,18 @@ export const CourseCatalogPage: React.FC = () => {
                 )}
 
                 <div className="flex gap-2 pt-1">
-                  <Button variant="outline" size="md" onClick={() => setRegisterCourse(null)}>
+                  <Button variant="outline" size="md" onClick={() => setRegisterCourse(null)} className="flex-1">
                     Hủy
                   </Button>
                   <Button
                     variant="primary"
                     size="md"
                     onClick={handleSubmitRegistration}
+                    disabled={isRegistering || !agreedToTerms}
                     icon={<ArrowRight className="h-4 w-4" />}
+                    className="flex-1"
                   >
-                    {isRegistering ? 'Đang gửi...' : 'Xác nhận Đăng ký'}
+                    {isRegistering ? 'Đang gửi...' : 'Gửi Đơn Đăng Ký Ngay'}
                   </Button>
                 </div>
               </>
