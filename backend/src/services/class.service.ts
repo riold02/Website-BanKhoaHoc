@@ -474,7 +474,7 @@ export class ClassService {
     const classRecord = await prisma.class.findUnique({
       where: { id: classId },
       include: {
-        gradeComponents: { include: { grades: true } },
+        gradeComponents: { orderBy: { id: "asc" } },
         enrollments: {
           where: { status: "ACTIVE" },
           include: {

@@ -304,6 +304,14 @@ export const ClassManagementPage: React.FC = () => {
           <ClassDetail
             classRecord={selectedClass}
             onClose={() => setSelectedClass(null)}
+            onClassUpdated={(updatedClass) => {
+              setSelectedClass(updatedClass);
+              setClasses((current) =>
+                current.map((item) =>
+                  item.id === updatedClass.id ? { ...item, ...updatedClass } : item,
+                ),
+              );
+            }}
             onAllocated={async (updatedClass) => {
               const sessions = await classApi.getSessions(updatedClass.id);
               setSelectedClass({ ...updatedClass, sessions });
@@ -829,7 +837,8 @@ const ClassDetail: React.FC<{
   onClose: () => void;
   onAllocated: (updatedClass: ManagedClass) => Promise<void>;
   onDeleted: () => Promise<void>;
-}> = ({ classRecord, onClose, onAllocated, onDeleted }) => {
+  onClassUpdated?: (updatedClass: ManagedClass) => void;
+}> = ({ classRecord, onClose, onAllocated, onDeleted, onClassUpdated }) => {
   const [isAllocationOpen, setIsAllocationOpen] = useState(false);
   const [candidates, setCandidates] = useState<Registration[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -940,15 +949,15 @@ const ClassDetail: React.FC<{
     (candidate) => !selectedIds.includes(candidate.id),
   );
 
-  const loadGradebook = async () => {
+  const loadGradebook = async (silent = false) => {
     try {
-      setIsLoadingGradebook(true);
+      if (!silent) setIsLoadingGradebook(true);
       setGradebookError(null);
       setGradebook(await classApi.getGradebook(classRecord.id));
     } catch (requestError: any) {
       setGradebookError(requestError.message || "Không thể tải sổ điểm");
     } finally {
-      setIsLoadingGradebook(false);
+      if (!silent) setIsLoadingGradebook(false);
     }
   };
 
@@ -1040,7 +1049,7 @@ const ClassDetail: React.FC<{
             <Badge variant="primary">
               {classRecord.enrollments.length} học viên
             </Badge>
-            <Button variant="outline" size="sm" onClick={loadGradebook}>
+            <Button variant="outline" size="sm" onClick={() => loadGradebook()}>
               Sổ điểm
             </Button>
             {remainingCapacity > 0 &&
@@ -1361,10 +1370,10 @@ const ClassDetail: React.FC<{
             onClose={() => setAttendanceSession(null)}
             onSaved={(updatedSession) => {
               setAttendanceSession(updatedSession);
-              classRecord.sessions = classRecord.sessions?.map((session) =>
+              const newSessions = classRecord.sessions?.map((session) =>
                 session.id === updatedSession.id ? updatedSession : session,
               );
-              classRecord.enrollments = classRecord.enrollments.map(
+              const newEnrollments = classRecord.enrollments.map(
                 (enrollment) => {
                   const savedAttendance = updatedSession.attendances?.find(
                     (attendance) => attendance.enrollmentId === enrollment.id,
@@ -1381,6 +1390,14 @@ const ClassDetail: React.FC<{
                   };
                 },
               );
+              const updated = {
+                ...classRecord,
+                sessions: newSessions,
+                enrollments: newEnrollments,
+              };
+              if (onClassUpdated) {
+                onClassUpdated(updated);
+              }
             }}
           />
         </Modal>
@@ -1560,6 +1577,28 @@ const AttendanceGrid: React.FC<{
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const markAll = (status: AttendanceStatus) => {
+    setStatuses(
+      Object.fromEntries(
+        classRecord.enrollments.map((enrollment) => [enrollment.id, status]),
+      ),
+    );
+  };
+
+  const counts = useMemo(() => {
+    const res: Record<AttendanceStatus, number> = {
+      PRESENT: 0,
+      ABSENT: 0,
+      LATE: 0,
+      EXCUSED: 0,
+    };
+    Object.values(statuses).forEach((st) => {
+      if (res[st] !== undefined) res[st]++;
+    });
+    return res;
+  }, [statuses]);
 
   const save = async () => {
     try {
@@ -1573,7 +1612,11 @@ const AttendanceGrid: React.FC<{
           status,
         })),
       );
+      setSaveSuccess(true);
       onSaved({ ...session, status: "COMPLETED", attendances });
+      setTimeout(() => {
+        onClose();
+      }, 400);
     } catch (requestError: any) {
       setError(requestError.message || "Không thể lưu điểm danh");
     } finally {
@@ -1588,9 +1631,42 @@ const AttendanceGrid: React.FC<{
           {error}
         </div>
       )}
+      {saveSuccess && (
+        <div className="m-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          <Check className="h-4 w-4 text-emerald-600" />
+          Đã lưu điểm danh thành công!
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Đánh dấu nhanh:
+          </span>
+          <button
+            type="button"
+            onClick={() => markAll("PRESENT")}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+          >
+            <Check className="h-3 w-3" /> Tất cả có mặt
+          </button>
+          <button
+            type="button"
+            onClick={() => markAll("ABSENT")}
+            className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
+          >
+            <X className="h-3 w-3" /> Tất cả vắng
+          </button>
+        </div>
+        <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
+          <span className="text-emerald-700">Có mặt: <strong>{counts.PRESENT}</strong></span>
+          <span className="text-rose-700">Vắng: <strong>{counts.ABSENT}</strong></span>
+          <span className="text-amber-700">Trễ: <strong>{counts.LATE}</strong></span>
+          <span className="text-sky-700">Miễn: <strong>{counts.EXCUSED}</strong></span>
+        </div>
+      </div>
       <div className="max-h-64 overflow-y-auto">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 bg-white text-[10px] uppercase text-slate-500 shadow-sm">
+          <thead className="sticky top-0 bg-white text-[10px] uppercase text-slate-500 shadow-xs">
             <tr>
               <th className="px-4 py-2">Học viên</th>
               <th className="px-4 py-2">Mã học viên</th>
@@ -1640,7 +1716,10 @@ const AttendanceGrid: React.FC<{
           </tbody>
         </table>
       </div>
-      <div className="flex justify-end border-t border-slate-200 bg-slate-50/50 px-4 py-3">
+      <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-4 py-3">
+        <Button variant="outline" size="sm" onClick={onClose}>
+          Đóng
+        </Button>
         <Button variant="primary" size="sm" isLoading={isSaving} onClick={save}>
           Lưu điểm danh
         </Button>
@@ -1654,7 +1733,7 @@ const GradebookSheet: React.FC<{
   gradebook: Gradebook | null;
   isLoading: boolean;
   error: string | null;
-  onRetry: () => void;
+  onRetry: (silent?: boolean) => void;
   onClose: () => void;
 }> = ({ classId, gradebook, isLoading, error, onRetry, onClose }) => {
   const [scores, setScores] = useState<Record<string, Record<string, string>>>(
@@ -1663,7 +1742,12 @@ const GradebookSheet: React.FC<{
   const [savingEnrollmentId, setSavingEnrollmentId] = useState<string | null>(
     null,
   );
+  const [isSavingAll, setIsSavingAll] = useState(false);
+  const [recentlySavedIds, setRecentlySavedIds] = useState<
+    Record<string, boolean>
+  >({});
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveAllSuccess, setSaveAllSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!gradebook) return;
@@ -1696,11 +1780,81 @@ const GradebookSheet: React.FC<{
       setSavingEnrollmentId(enrollmentId);
       setSaveError(null);
       await classApi.saveGrades(classId, enrollmentId, grades);
-      onRetry();
+      setRecentlySavedIds((prev) => ({ ...prev, [enrollmentId]: true }));
+      setTimeout(() => {
+        setRecentlySavedIds((prev) => {
+          const copy = { ...prev };
+          delete copy[enrollmentId];
+          return copy;
+        });
+      }, 3000);
+      onRetry(true);
     } catch (requestError: any) {
       setSaveError(requestError.message || "Không thể lưu điểm");
     } finally {
       setSavingEnrollmentId(null);
+    }
+  };
+
+  const saveAll = async () => {
+    if (!gradebook) return;
+    try {
+      setIsSavingAll(true);
+      setSaveError(null);
+      setSaveAllSuccess(null);
+      const modifiedEnrollments = gradebook.enrollments.filter((enrollment) => {
+        const row = scores[enrollment.id] || {};
+        return Object.values(row).some((val) => val !== "");
+      });
+      if (!modifiedEnrollments.length) return;
+      await Promise.all(
+        modifiedEnrollments.map((enrollment) => {
+          const row = scores[enrollment.id] || {};
+          const grades = Object.entries(row)
+            .filter(([, value]) => value !== "")
+            .map(([componentId, value]) => ({
+              componentId,
+              score: Number(value),
+            }));
+          return classApi.saveGrades(classId, enrollment.id, grades);
+        }),
+      );
+      const newlySaved = Object.fromEntries(
+        modifiedEnrollments.map((e) => [e.id, true]),
+      );
+      setRecentlySavedIds(newlySaved);
+      setTimeout(() => setRecentlySavedIds({}), 3000);
+      setSaveAllSuccess(
+        `Đã lưu thành công điểm cho ${modifiedEnrollments.length} học viên!`,
+      );
+      setTimeout(() => setSaveAllSuccess(null), 4000);
+      onRetry(true);
+    } catch (requestError: any) {
+      setSaveError(requestError.message || "Không thể lưu toàn bộ điểm");
+    } finally {
+      setIsSavingAll(false);
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    componentId: string,
+    rowIndex: number,
+  ) => {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = document.querySelector<HTMLInputElement>(
+        `input[data-component="${componentId}"][data-row="${rowIndex + 1}"]`,
+      );
+      next?.focus();
+      next?.select();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = document.querySelector<HTMLInputElement>(
+        `input[data-component="${componentId}"][data-row="${rowIndex - 1}"]`,
+      );
+      prev?.focus();
+      prev?.select();
     }
   };
 
@@ -1710,10 +1864,16 @@ const GradebookSheet: React.FC<{
         <div className="m-3 flex items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
           <span>{error || saveError}</span>
           {error && (
-            <Button variant="ghost" size="sm" onClick={onRetry}>
+            <Button variant="ghost" size="sm" onClick={() => onRetry()}>
               Thử lại
             </Button>
           )}
+        </div>
+      )}
+      {saveAllSuccess && (
+        <div className="m-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          <Check className="h-4 w-4 text-emerald-600" />
+          {saveAllSuccess}
         </div>
       )}
       {isLoading ? (
@@ -1726,113 +1886,151 @@ const GradebookSheet: React.FC<{
           Lớp chưa cấu hình đầu điểm.
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-xs">
-            <thead className="border-b border-slate-200 bg-white text-[10px] uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="sticky left-0 z-10 bg-white px-4 py-3">
-                  Học viên
-                </th>
-                {gradebook.gradeComponents.map((component) => (
-                  <th key={component.id} className="px-3 py-3 text-center">
-                    {component.name}
-                    <span className="mt-0.5 block normal-case text-slate-400">
-                      {Math.round(component.weight * 100)}%
-                    </span>
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
+            <div className="text-xs text-slate-500">
+              💡{" "}
+              <em>
+                Nhập điểm & dùng phím <strong>Enter</strong> hoặc{" "}
+                <strong>↓</strong> để chuyển nhanh giữa các học viên.
+              </em>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                isLoading={isSavingAll}
+                disabled={isSavingAll || savingEnrollmentId !== null}
+                onClick={saveAll}
+              >
+                Lưu tất cả điểm ({gradebook.enrollments.length} học viên)
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-xs">
+              <thead className="border-b border-slate-200 bg-white text-[10px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="sticky left-0 z-10 bg-white px-4 py-3">
+                    Học viên
                   </th>
-                ))}
-                <th className="px-3 py-3 text-center">Tổng kết</th>
-                <th className="px-3 py-3 text-center">Kết quả</th>
-                <th className="px-4 py-3 text-right">Lưu</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {gradebook.enrollments.map((enrollment) => {
-                const resultIsFail = enrollment.academicResult === "FAIL";
-                return (
-                  <tr
-                    key={enrollment.id}
-                    className={
-                      resultIsFail ? "bg-rose-50/40" : "hover:bg-blue-50/30"
-                    }
-                  >
-                    <td
-                      className={`sticky left-0 z-[1] px-4 py-3 ${resultIsFail ? "bg-rose-50/80" : "bg-white"}`}
+                  {gradebook.gradeComponents.map((component) => (
+                    <th key={component.id} className="px-3 py-3 text-center">
+                      {component.name}
+                      <span className="mt-0.5 block normal-case text-slate-400">
+                        {Math.round(component.weight * 100)}%
+                      </span>
+                    </th>
+                  ))}
+                  <th className="px-3 py-3 text-center">Tổng kết</th>
+                  <th className="px-3 py-3 text-center">Kết quả</th>
+                  <th className="px-4 py-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {gradebook.enrollments.map((enrollment, rowIndex) => {
+                  const resultIsFail = enrollment.academicResult === "FAIL";
+                  const isSaved = Boolean(recentlySavedIds[enrollment.id]);
+                  return (
+                    <tr
+                      key={enrollment.id}
+                      className={
+                        resultIsFail ? "bg-rose-50/40" : "hover:bg-blue-50/30"
+                      }
                     >
-                      <p className="font-semibold text-slate-800">
-                        {enrollment.student.user?.profile?.fullName ||
-                          enrollment.student.studentCode}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[11px] text-slate-500">
-                        {enrollment.student.studentCode}
-                      </p>
-                    </td>
-                    {gradebook.gradeComponents.map((component) => {
-                      const value = scores[enrollment.id]?.[component.id] ?? "";
-                      const isWeak = value !== "" && Number(value) < 4;
-                      return (
-                        <td
-                          key={component.id}
-                          className="px-3 py-3 text-center"
+                      <td
+                        className={`sticky left-0 z-[1] px-4 py-3 ${resultIsFail ? "bg-rose-50/80" : "bg-white"}`}
+                      >
+                        <p className="font-semibold text-slate-800">
+                          {enrollment.student.user?.profile?.fullName ||
+                            enrollment.student.studentCode}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[11px] text-slate-500">
+                          {enrollment.student.studentCode}
+                        </p>
+                      </td>
+                      {gradebook.gradeComponents.map((component) => {
+                        const value =
+                          scores[enrollment.id]?.[component.id] ?? "";
+                        const isWeak = value !== "" && Number(value) < 4;
+                        return (
+                          <td
+                            key={component.id}
+                            className="px-3 py-3 text-center"
+                          >
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.01"
+                              data-component={component.id}
+                              data-row={rowIndex}
+                              value={value}
+                              onKeyDown={(e) =>
+                                handleKeyDown(e, component.id, rowIndex)
+                              }
+                              onChange={(event) =>
+                                setScores((current) => ({
+                                  ...current,
+                                  [enrollment.id]: {
+                                    ...current[enrollment.id],
+                                    [component.id]: event.target.value,
+                                  },
+                                }))
+                              }
+                              className={`w-16 rounded-md border px-2 py-1.5 text-center text-xs font-semibold outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 ${isWeak ? "border-rose-300 bg-rose-50 text-rose-700" : "border-slate-300 bg-white text-slate-700"}`}
+                              aria-label={`${component.name} của ${enrollment.student.studentCode}`}
+                            />
+                          </td>
+                        );
+                      })}
+                      <td
+                        className={`px-3 py-3 text-center text-sm font-bold ${enrollment.finalScore !== null && enrollment.finalScore !== undefined && enrollment.finalScore < 5 ? "text-rose-700" : "text-slate-900"}`}
+                      >
+                        {enrollment.finalScore ?? "--"}
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <Badge
+                          variant={
+                            resultIsFail
+                              ? "error"
+                              : enrollment.academicResult === "DISTINCTION"
+                                ? "success"
+                                : enrollment.academicResult === "PASS"
+                                  ? "primary"
+                                  : "slate"
+                          }
                         >
-                          <input
-                            type="number"
-                            min="0"
-                            max="10"
-                            step="0.01"
-                            value={value}
-                            onChange={(event) =>
-                              setScores((current) => ({
-                                ...current,
-                                [enrollment.id]: {
-                                  ...current[enrollment.id],
-                                  [component.id]: event.target.value,
-                                },
-                              }))
+                          {enrollment.academicResult || "Chưa đủ điểm"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {isSaved && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                              <Check className="h-3 w-3" /> Đã lưu
+                            </span>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            isLoading={savingEnrollmentId === enrollment.id}
+                            disabled={
+                              savingEnrollmentId !== null || isSavingAll
                             }
-                            className={`w-16 rounded-md border px-2 py-1.5 text-center text-xs font-semibold outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 ${isWeak ? "border-rose-300 bg-rose-50 text-rose-700" : "border-slate-300 bg-white text-slate-700"}`}
-                            aria-label={`${component.name} của ${enrollment.student.studentCode}`}
-                          />
-                        </td>
-                      );
-                    })}
-                    <td
-                      className={`px-3 py-3 text-center text-sm font-bold ${enrollment.finalScore !== null && enrollment.finalScore !== undefined && enrollment.finalScore < 5 ? "text-rose-700" : "text-slate-900"}`}
-                    >
-                      {enrollment.finalScore ?? "--"}
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <Badge
-                        variant={
-                          resultIsFail
-                            ? "error"
-                            : enrollment.academicResult === "DISTINCTION"
-                              ? "success"
-                              : enrollment.academicResult === "PASS"
-                                ? "primary"
-                                : "slate"
-                        }
-                      >
-                        {enrollment.academicResult || "Chưa đủ điểm"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        isLoading={savingEnrollmentId === enrollment.id}
-                        disabled={savingEnrollmentId !== null}
-                        onClick={() => saveRow(enrollment.id)}
-                      >
-                        Lưu
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                            onClick={() => saveRow(enrollment.id)}
+                          >
+                            Lưu
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

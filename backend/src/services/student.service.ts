@@ -140,46 +140,55 @@ export class StudentService {
     const enrollments = await prisma.classEnrollment.findMany({
       where: { studentId: student.id, status: { in: ["ACTIVE", "COMPLETED"] } },
       include: {
-        class: { include: { period: { include: { course: true } } } },
+        attendances: true,
+        class: {
+          include: {
+            period: { include: { course: true } },
+            sessions: {
+              where: { status: { not: "CANCELLED" } },
+              orderBy: { sessionNumber: "asc" },
+            },
+          },
+        },
       },
       orderBy: { enrolledAt: "desc" },
     });
 
-    return Promise.all(
-      enrollments.map(async (enrollment) => {
-        const sessions = await prisma.classSession.findMany({
-          where: { classId: enrollment.classId, status: { not: "CANCELLED" } },
-          orderBy: { sessionNumber: "asc" },
-          include: { attendances: { where: { enrollmentId: enrollment.id } } },
-        });
-        const attendanceRecords = sessions.map((session) => ({
-          sessionId: session.id,
-          sessionNumber: session.sessionNumber,
-          sessionDate: session.sessionDate,
-          topic: session.topic,
-          sessionStatus: session.status,
-          attendance: session.attendances[0] || null,
-        }));
-        const absenceCount = attendanceRecords.filter(
-          (record) => record.attendance?.status === "ABSENT",
-        ).length;
-        return {
-          enrollmentId: enrollment.id,
-          class: enrollment.class,
-          sessions: attendanceRecords,
-          summary: {
-            totalSessions: sessions.length,
-            recordedSessions: attendanceRecords.filter(
-              (record) => record.attendance,
-            ).length,
-            absenceCount,
-            absenceRate: sessions.length
-              ? Math.round((absenceCount / sessions.length) * 10000) / 100
-              : 0,
-          },
-        };
-      }),
-    );
+    return enrollments.map((enrollment) => {
+      const attendanceMap = new Map(
+        enrollment.attendances.map((attendance) => [
+          attendance.sessionId,
+          attendance,
+        ]),
+      );
+      const sessions = enrollment.class.sessions || [];
+      const attendanceRecords = sessions.map((session) => ({
+        sessionId: session.id,
+        sessionNumber: session.sessionNumber,
+        sessionDate: session.sessionDate,
+        topic: session.topic,
+        sessionStatus: session.status,
+        attendance: attendanceMap.get(session.id) || null,
+      }));
+      const absenceCount = attendanceRecords.filter(
+        (record) => record.attendance?.status === "ABSENT",
+      ).length;
+      return {
+        enrollmentId: enrollment.id,
+        class: enrollment.class,
+        sessions: attendanceRecords,
+        summary: {
+          totalSessions: sessions.length,
+          recordedSessions: attendanceRecords.filter(
+            (record) => record.attendance,
+          ).length,
+          absenceCount,
+          absenceRate: sessions.length
+            ? Math.round((absenceCount / sessions.length) * 10000) / 100
+            : 0,
+        },
+      };
+    });
   }
 
   async getMyGrades(userId: string) {
