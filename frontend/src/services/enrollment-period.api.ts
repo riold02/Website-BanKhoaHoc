@@ -6,6 +6,7 @@ export const enrollmentPeriodApi = {
   async getPeriods(params?: {
     courseId?: string;
     status?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }): Promise<{ periods: EnrollmentPeriod[]; meta: any }> {
@@ -26,6 +27,7 @@ export const enrollmentPeriodApi = {
     endRegistration: string;
     expectedStartDate?: string | null;
     tuitionFee: number;
+    minCapacity?: number;
     maxCapacity: number;
   }): Promise<EnrollmentPeriod> {
     const res = await apiClient.post<ApiSuccessResponse<EnrollmentPeriod>>('/enrollment-periods', payload);
@@ -40,6 +42,7 @@ export const enrollmentPeriodApi = {
       endRegistration?: string;
       expectedStartDate?: string | null;
       tuitionFee?: number;
+      minCapacity?: number;
       maxCapacity?: number;
     }
   ): Promise<EnrollmentPeriod> {

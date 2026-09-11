@@ -1,11 +1,14 @@
-import { Router } from "express";
-import { authRoutes } from "./auth.routes";
-import { userRoutes } from "./user.routes";
-import { courseRoutes } from "./course.routes";
-import { enrollmentPeriodRoutes } from "./enrollment-period.routes";
-import { registrationRoutes } from "./registration.routes";
-import { studentRoutes } from "./student.routes";
-import { classRoutes } from "./class.routes";
+import { Router } from 'express';
+import { authRoutes } from './auth.routes';
+import { userRoutes } from './user.routes';
+import { courseRoutes } from './course.routes';
+import { enrollmentPeriodRoutes } from './enrollment-period.routes';
+import { registrationRoutes } from './registration.routes';
+import { studentRoutes } from './student.routes';
+import { classRoutes } from './class.routes';
+import { tuitionRoutes } from './tuition.routes';
+import { dashboardRoutes } from './dashboard.routes';
+import { excelExportRoutes } from './excel-export.routes';
 
 const router = Router();
 
@@ -29,5 +32,10 @@ router.use("/enrollment-periods", enrollmentPeriodRoutes);
 router.use("/registrations", registrationRoutes);
 router.use("/students", studentRoutes);
 router.use("/classes", classRoutes);
+
+// Member 4 Modules (M06)
+router.use('/tuitions', tuitionRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/exports', excelExportRoutes);
 
 export const apiRoutes = router;

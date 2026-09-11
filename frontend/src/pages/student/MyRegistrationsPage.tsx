@@ -1,5 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ClipboardList, Calendar, BookOpen, AlertCircle, CheckCircle, Clock, XCircle, X, Receipt, CreditCard, CheckCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ClipboardList,
+  Calendar,
+  BookOpen,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  X,
+  Receipt,
+  CreditCard,
+  CheckCheck,
+  WalletCards,
+} from 'lucide-react';
 import { registrationApi } from '../../services/registration.api';
 import { Registration, RegistrationStatus } from '../../types/enrollment.types';
 import { formatDate, formatVND } from '../../utils/formatters';
@@ -21,6 +35,7 @@ const STATUS_ICON: Record<RegistrationStatus, React.ReactNode> = {
 };
 
 export const MyRegistrationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -193,13 +208,32 @@ export const MyRegistrationsPage: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-mono">Mã HĐ: {r.invoice.invoiceCode}</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <p className="text-[10px] text-slate-400 font-mono">Mã HĐ: {r.invoice.invoiceCode}</p>
+                          <button
+                            onClick={() => navigate('/my-tuition')}
+                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition shadow-2xs"
+                          >
+                            <WalletCards className="h-3 w-3" />
+                            Xem học phí & Quét mã QR
+                          </button>
+                        </div>
                       </div>
                     )}
                     {/* ────────────────────────────────────────────────────── */}
 
-                    {r.status === 'PENDING' && (
-                      <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex justify-end gap-2">
+                      {r.status === 'APPROVED' && !r.invoice && (
+                        <button
+                          onClick={() => navigate('/my-tuition')}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition"
+                        >
+                          <WalletCards className="h-3.5 w-3.5" />
+                          Xem học phí
+                        </button>
+                      )}
+
+                      {r.status === 'PENDING' && (
                         <button
                           onClick={() => handleCancel(r.id)}
                           disabled={cancellingId === r.id}
@@ -208,8 +242,8 @@ export const MyRegistrationsPage: React.FC = () => {
                           <X className="h-3.5 w-3.5" />
                           {cancellingId === r.id ? 'Đang hủy...' : 'Hủy đơn'}
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );

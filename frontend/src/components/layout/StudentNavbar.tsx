@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   CalendarDays,
@@ -8,9 +8,10 @@ import {
   LogOut,
   ShieldCheck,
   User,
-} from "lucide-react";
-import { useAuth } from "../../context/auth.context";
-import { Button } from "../ui/Button";
+  WalletCards,
+} from 'lucide-react';
+import { useAuth } from '../../context/auth.context';
+import { Button } from '../ui/Button';
 
 export const StudentNavbar: React.FC = () => {
   const { user, role, logout } = useAuth();
@@ -42,6 +43,22 @@ export const StudentNavbar: React.FC = () => {
           >
             <BookOpen className="h-4 w-4" />
             <span>Danh mục Khóa học</span>
+          </Link>
+          {user && (
+            <Link
+              to="/my-tuition"
+              className="text-sm font-medium text-slate-700 flex items-center gap-1.5 hover:text-slate-900 transition"
+            >
+              <WalletCards className="h-4 w-4" />
+              <span>Học phí của tôi</span>
+            </Link>
+          )}
+          <Link
+            to="/my-registrations"
+            className="text-sm font-medium text-slate-700 flex items-center gap-1.5 hover:text-slate-900 transition"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>Đơn của tôi</span>
           </Link>
           <a
             href="#features"

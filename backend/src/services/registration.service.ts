@@ -174,16 +174,17 @@ export class RegistrationService {
         },
       });
 
-      if (status === "APPROVED") {
+      if (status === 'APPROVED') {
         // Kiểm tra chỉ tiêu còn chỗ
         const period = await tx.enrollmentPeriod.findUnique({
           where: { id: reg.periodId },
         });
+
         if (period && period.currentEnrolled >= period.maxCapacity) {
           throw new AppError(
-            "Đợt tuyển sinh đã đủ chỉ tiêu, không thể duyệt thêm",
+            'Đợt tuyển sinh đã đủ chỉ tiêu, không thể duyệt thêm',
             400,
-            "PERIOD_FULL",
+            'PERIOD_FULL',
           );
         }
 
@@ -193,8 +194,7 @@ export class RegistrationService {
           data: { currentEnrolled: { increment: 1 } },
         });
 
-        // ── TASK-205: Tự động tạo TuitionInvoice ──────────────────────────
-        // Kiểm tra invoice đã tồn tại chưa (idempotent — tránh tạo 2 lần)
+        // Tự động tạo TuitionInvoice (idempotent — tránh tạo 2 lần)
         const existingInvoice = await tx.tuitionInvoice.findUnique({
           where: { registrationId: id },
         });
@@ -204,21 +204,21 @@ export class RegistrationService {
             .toString(36)
             .substring(2, 7)
             .toUpperCase()}`;
-
-          const tuitionFee = period?.tuitionFee ?? 0;
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 14);
 
           await tx.tuitionInvoice.create({
             data: {
               invoiceCode,
               registrationId: id,
-              totalAmount: tuitionFee,
+              totalAmount: period?.tuitionFee ?? 0,
               paidAmount: 0,
               discountAmount: 0,
-              paymentStatus: "UNPAID",
+              paymentStatus: 'UNPAID',
+              dueDate,
             },
           });
         }
-        // ──────────────────────────────────────────────────────────────────
       }
 
       // Trả về registration kèm invoice (nếu vừa được tạo khi APPROVED)

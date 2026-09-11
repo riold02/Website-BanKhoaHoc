@@ -1,20 +1,22 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { LoginPage } from "./pages/auth/LoginPage";
-import { RegisterPage } from "./pages/auth/RegisterPage";
-import { CourseCatalogPage } from "./pages/student/CourseCatalogPage";
-import { MyRegistrationsPage } from "./pages/student/MyRegistrationsPage";
-import { LearningPortalPage } from "./pages/student/LearningPortalPage";
-import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
-import { CourseManagementPage } from "./pages/admin/CourseManagementPage";
-import { UserManagementPage } from "./pages/admin/UserManagementPage";
-import { EnrollmentPeriodManagementPage } from "./pages/admin/EnrollmentPeriodManagementPage";
-import { RegistrationManagementPage } from "./pages/admin/RegistrationManagementPage";
-import { StudentManagementPage } from "./pages/admin/StudentManagementPage";
-import { ClassManagementPage } from "./pages/admin/ClassManagementPage";
-import { AdminLayout } from "./layouts/AdminLayout";
-import { StudentLayout } from "./layouts/StudentLayout";
-import { ProtectedRoute } from "./components/layout/ProtectedRoute";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { CourseCatalogPage } from './pages/student/CourseCatalogPage';
+import { MyRegistrationsPage } from './pages/student/MyRegistrationsPage';
+import { MyTuitionPage } from './pages/student/MyTuitionPage';
+import { LearningPortalPage } from './pages/student/LearningPortalPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { CourseManagementPage } from './pages/admin/CourseManagementPage';
+import { UserManagementPage } from './pages/admin/UserManagementPage';
+import { EnrollmentPeriodManagementPage } from './pages/admin/EnrollmentPeriodManagementPage';
+import { RegistrationManagementPage } from './pages/admin/RegistrationManagementPage';
+import { StudentManagementPage } from './pages/admin/StudentManagementPage';
+import { ClassManagementPage } from './pages/admin/ClassManagementPage';
+import { TuitionManagementPage } from './pages/admin/TuitionManagementPage';
+import { AdminLayout } from './layouts/AdminLayout';
+import { StudentLayout } from './layouts/StudentLayout';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
 
 export const App: React.FC = () => {
   return (
@@ -31,15 +33,25 @@ export const App: React.FC = () => {
         <Route
           path="/my-registrations"
           element={
-            <ProtectedRoute allowedRoles={["STUDENT"]}>
+            <ProtectedRoute allowedRoles={['STUDENT']}>
               <MyRegistrationsPage />
             </ProtectedRoute>
           }
         />
+        {/* Member 4 - M06: Học phí của tôi */}
+        <Route
+          path="/my-tuition"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <MyTuitionPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Member 3 - M07, M08: Cổng học tập & Thời khóa biểu */}
         <Route
           path="/my-learning"
           element={
-            <ProtectedRoute allowedRoles={["STUDENT"]}>
+            <ProtectedRoute allowedRoles={['STUDENT']}>
               <LearningPortalPage />
             </ProtectedRoute>
           }
@@ -50,7 +62,7 @@ export const App: React.FC = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -60,7 +72,7 @@ export const App: React.FC = () => {
         <Route
           path="users"
           element={
-            <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <ProtectedRoute allowedRoles={['ADMIN']}>
               <UserManagementPage />
             </ProtectedRoute>
           }
@@ -74,7 +86,10 @@ export const App: React.FC = () => {
         <Route path="registrations" element={<RegistrationManagementPage />} />
         {/* Member 2 - M11: Quản lý Học viên */}
         <Route path="students" element={<StudentManagementPage />} />
+        {/* Member 3 - M05: Quản lý Lớp học */}
         <Route path="classes" element={<ClassManagementPage />} />
+        {/* Member 4 - M06: Hóa đơn & công nợ */}
+        <Route path="tuition" element={<TuitionManagementPage />} />
       </Route>
 
       {/* Fallback */}

@@ -16,6 +16,7 @@ export interface EnrollmentPeriodBasic {
   endRegistration: string;
   expectedStartDate?: string | null;
   status: 'UPCOMING' | 'OPEN' | 'CLOSED' | 'CANCELLED';
+  minCapacity?: number;
   maxCapacity: number;
   currentEnrolled: number;
 }

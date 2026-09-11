@@ -14,11 +14,20 @@ import {
 import { useAuth } from "../../context/auth.context";
 import { Badge } from "../ui/Badge";
 
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  exact?: boolean;
+  badge?: string;
+  isComingSoon?: boolean;
+}
+
 export const AdminSidebar: React.FC = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       label: "Tổng quan (Dashboard)",
       path: "/admin",
@@ -71,8 +80,7 @@ export const AdminSidebar: React.FC = () => {
       label: "Sổ Học phí & Công nợ",
       path: "/admin/tuition",
       icon: <Receipt className="h-4 w-4" />,
-      badge: "TV 4",
-      isComingSoon: true,
+      badge: 'TV 4',
     },
   ];
 

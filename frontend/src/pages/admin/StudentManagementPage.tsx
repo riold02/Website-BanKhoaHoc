@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   GraduationCap, Search, RefreshCw, ChevronLeft, ChevronRight,
-  Eye, X, User, Mail, Phone, CreditCard, BookOpen, Calendar,
+  Eye, X, User, Mail, Phone, CreditCard, BookOpen, Calendar, FileDown,
 } from 'lucide-react';
 import { studentApi } from '../../services/student.api';
+import { exportApi } from '../../services/export.api';
 import { Student, Registration, RegistrationStatus } from '../../types/enrollment.types';
 import { formatDate } from '../../utils/formatters';
 
@@ -26,6 +27,8 @@ export const StudentManagementPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [detailStudent, setDetailStudent] = useState<Student | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isExportingGrades, setIsExportingGrades] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const loadStudents = useCallback(async () => {
     setIsLoading(true);
@@ -41,6 +44,23 @@ export const StudentManagementPage: React.FC = () => {
   }, [search, page]);
 
   useEffect(() => { loadStudents(); }, [loadStudents]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const handleExportGrades = async () => {
+    setIsExportingGrades(true);
+    try {
+      await exportApi.exportGrades();
+    } catch (err: any) {
+      setToast(err.message || 'Không thể xuất bảng điểm');
+    } finally {
+      setIsExportingGrades(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +92,12 @@ export const StudentManagementPage: React.FC = () => {
         <p className="text-xs text-slate-500 mt-0.5">Danh sách toàn bộ học viên và lịch sử đăng ký trong hệ thống</p>
       </div>
 
+      {toast && (
+        <div className="fixed right-5 top-5 z-50 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 shadow-lg">
+          {toast}
+        </div>
+      )}
+
       {/* Toolbar */}
       <form onSubmit={handleSearch} className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
@@ -89,6 +115,15 @@ export const StudentManagementPage: React.FC = () => {
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition"
         >
           Tìm kiếm
+        </button>
+        <button
+          type="button"
+          onClick={handleExportGrades}
+          disabled={isExportingGrades}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExportingGrades ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <FileDown className="h-4 w-4" />}
+          {isExportingGrades ? 'Đang tải...' : 'Xuất Excel'}
         </button>
         <button
           type="button"
