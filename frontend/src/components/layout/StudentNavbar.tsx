@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   CalendarDays,
@@ -10,10 +10,9 @@ import {
   LogOut,
   ShieldCheck,
   User,
-  WalletCards,
-} from 'lucide-react';
-import { useAuth } from '../../context/auth.context';
-import { Button } from '../ui/Button';
+} from "lucide-react";
+import { useAuth } from "../../context/auth.context";
+import { Button } from "../ui/Button";
 
 export const StudentNavbar: React.FC = () => {
   const { user, role, logout } = useAuth();
@@ -46,46 +45,20 @@ export const StudentNavbar: React.FC = () => {
           <Link
             to="/courses"
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-              isActive('/courses')
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              isActive("/courses")
+                ? "bg-blue-50 text-blue-700"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
             <BookOpen className="h-4 w-4" />
             <span>Khóa học</span>
           </Link>
-          {user && (
-            <Link
-              to="/my-tuition"
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-                isActive('/my-tuition')
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <WalletCards className="h-4 w-4" />
-              <span>Học phí</span>
-            </Link>
-          )}
-          {user && (
-            <Link
-              to="/my-registrations"
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-                isActive('/my-registrations')
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              <span>Đơn của tôi</span>
-            </Link>
-          )}
           <Link
             to="/about"
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-              isActive('/about')
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              isActive("/about")
+                ? "bg-blue-50 text-blue-700"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
             <Info className="h-4 w-4" />
@@ -94,9 +67,9 @@ export const StudentNavbar: React.FC = () => {
           <Link
             to="/admissions"
             className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
-              isActive('/admissions')
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              isActive("/admissions")
+                ? "bg-blue-50 text-blue-700"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
             <LifeBuoy className="h-4 w-4" />
@@ -108,21 +81,21 @@ export const StudentNavbar: React.FC = () => {
         <div className="flex items-center gap-3 shrink-0">
           {user ? (
             <div className="flex items-center gap-3">
-              {role === 'STUDENT' && (
+              {role === "STUDENT" && (
                 <Button
-                  variant={isActive('/my-learning') ? 'primary' : 'outline'}
+                  variant={isActive("/my-learning") ? "primary" : "outline"}
                   size="sm"
-                  onClick={() => navigate('/my-learning')}
+                  onClick={() => navigate("/my-learning")}
                   icon={<CalendarDays className="h-4 w-4" />}
                 >
                   Cổng học tập
                 </Button>
               )}
-              {(role === 'ADMIN' || role === 'STAFF') && (
+              {(role === "ADMIN" || role === "STAFF") && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/admin')}
+                  onClick={() => navigate("/admin")}
                   icon={<ShieldCheck className="h-4 w-4 text-blue-600" />}
                 >
                   Vào Trang Quản Trị
