@@ -35,11 +35,11 @@ Hệ thống **CMS Đào Tạo DLU** là giải pháp số hóa toàn diện quy
 
 ---
 
-## 🖼️ Ảnh Chụp Các Phân Hệ Quản Trị
+## 🖼️ Giao Diện Các Trang Chính
 
-| Bảng Điều Khiển & Biểu Đồ Doanh Thu | Sổ Quản Lý Thu Học Phí & Công Nợ |
+| Trang Giới Thiệu Trung Tâm (`/about`) | Trang Hỗ Trợ Tuyển Sinh (`/admissions`) |
 | :---: | :---: |
-| ![Admin Dashboard](./docs/images/admin-dashboard.png) | ![Tuition Billing](./docs/images/tuition-billing.png) |
+| ![Giới Thiệu Trung Tâm](./docs/images/about-page.png) | ![Hỗ Trợ Tuyển Sinh](./docs/images/admissions-page.png) |
 
 ---
 
