@@ -174,8 +174,8 @@ export class RegistrationService {
         },
       });
 
-      // Nếu APPROVED: tăng số học viên đã đăng ký của đợt
       if (status === "APPROVED") {
+        // Kiểm tra chỉ tiêu còn chỗ
         const period = await tx.enrollmentPeriod.findUnique({
           where: { id: reg.periodId },
         });
@@ -186,13 +186,54 @@ export class RegistrationService {
             "PERIOD_FULL",
           );
         }
+
+        // Tăng currentEnrolled của đợt
         await tx.enrollmentPeriod.update({
           where: { id: reg.periodId },
           data: { currentEnrolled: { increment: 1 } },
         });
+
+        // ── TASK-205: Tự động tạo TuitionInvoice ──────────────────────────
+        // Kiểm tra invoice đã tồn tại chưa (idempotent — tránh tạo 2 lần)
+        const existingInvoice = await tx.tuitionInvoice.findUnique({
+          where: { registrationId: id },
+        });
+
+        if (!existingInvoice) {
+          const invoiceCode = `INV-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 7)
+            .toUpperCase()}`;
+
+          const tuitionFee = period?.tuitionFee ?? 0;
+
+          await tx.tuitionInvoice.create({
+            data: {
+              invoiceCode,
+              registrationId: id,
+              totalAmount: tuitionFee,
+              paidAmount: 0,
+              discountAmount: 0,
+              paymentStatus: "UNPAID",
+            },
+          });
+        }
+        // ──────────────────────────────────────────────────────────────────
       }
 
-      return updated;
+      // Trả về registration kèm invoice (nếu vừa được tạo khi APPROVED)
+      return tx.registration.findUnique({
+        where: { id },
+        include: {
+          student: { include: { user: { include: { profile: true } } } },
+          period: {
+            include: {
+              course: { select: { id: true, courseCode: true, title: true } },
+            },
+          },
+          invoice: true,
+        },
+      });
     });
   }
 
