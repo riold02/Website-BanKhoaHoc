@@ -132,7 +132,20 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   };
 
   const handleToggleStatus = async (p: EnrollmentPeriod) => {
-    const next = p.status === 'OPEN' ? 'CLOSED' : 'OPEN';
+    // State machine: chỉ cho phép các transition hợp lệ
+    const NEXT_STATUS: Partial<Record<PeriodStatus, PeriodStatus>> = {
+      UPCOMING: 'OPEN',
+      OPEN: 'CLOSED',
+    };
+    const next = NEXT_STATUS[p.status as PeriodStatus];
+    if (!next) return; // CLOSED / CANCELLED không có transition tiếp theo
+
+    const labels: Record<string, string> = {
+      OPEN: 'Mở đợt đăng ký',
+      CLOSED: 'Đóng đợt đăng ký',
+    };
+    if (!window.confirm(`Xác nhận: ${labels[next]} "${p.name}"?`)) return;
+
     try {
       await enrollmentPeriodApi.updatePeriodStatus(p.id, next);
       loadPeriods();
@@ -272,20 +285,21 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                           >
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
-                          {p.status !== 'CANCELLED' && (
+                          {/* Nút chuyển trạng thái — chỉ hiện với UPCOMING và OPEN */}
+                          {(p.status === 'UPCOMING' || p.status === 'OPEN') && (
                             <button
                               onClick={() => handleToggleStatus(p)}
-                              title={p.status === 'OPEN' ? 'Đóng đợt' : 'Mở đợt'}
+                              title={p.status === 'UPCOMING' ? 'Mở đợt đăng ký' : 'Đóng đợt đăng ký'}
                               className={`p-1.5 rounded-lg transition ${
-                                p.status === 'OPEN'
-                                  ? 'text-emerald-600 hover:bg-emerald-50'
-                                  : 'text-slate-500 hover:bg-slate-100'
+                                p.status === 'UPCOMING'
+                                  ? 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                  : 'text-emerald-600 hover:text-rose-600 hover:bg-rose-50'
                               }`}
                             >
-                              {p.status === 'OPEN' ? (
-                                <ToggleRight className="h-4 w-4" />
-                              ) : (
+                              {p.status === 'UPCOMING' ? (
                                 <ToggleLeft className="h-4 w-4" />
+                              ) : (
+                                <ToggleRight className="h-4 w-4" />
                               )}
                             </button>
                           )}
