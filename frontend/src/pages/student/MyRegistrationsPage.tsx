@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ClipboardList, Calendar, BookOpen, AlertCircle, CheckCircle, Clock, XCircle, X } from 'lucide-react';
+import { ClipboardList, Calendar, BookOpen, AlertCircle, CheckCircle, Clock, XCircle, X, Receipt, CreditCard, CheckCheck } from 'lucide-react';
 import { registrationApi } from '../../services/registration.api';
 import { Registration, RegistrationStatus } from '../../types/enrollment.types';
 import { formatDate, formatVND } from '../../utils/formatters';
@@ -153,6 +153,50 @@ export const MyRegistrationsPage: React.FC = () => {
                         <span className="font-semibold text-slate-700">Ghi chú: </span>{r.note}
                       </div>
                     )}
+
+                    {/* ── TASK-210: Invoice info khi đơn đã được duyệt ─────── */}
+                    {r.status === 'APPROVED' && r.invoice && (
+                      <div className="mt-3 p-3 rounded-xl border border-amber-200 bg-amber-50/60 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+                            <Receipt className="h-3.5 w-3.5" />
+                            Hóa đơn học phí
+                          </div>
+                          {/* paymentStatus badge */}
+                          {r.invoice.paymentStatus === 'PAID' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              <CheckCheck className="h-3 w-3" /> Đã đóng đủ
+                            </span>
+                          ) : r.invoice.paymentStatus === 'PARTIAL' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                              <CreditCard className="h-3 w-3" /> Đóng một phần
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                              <CreditCard className="h-3 w-3" /> Chưa đóng
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-white rounded-lg p-2 border border-amber-100">
+                            <p className="text-[9px] text-slate-400 uppercase font-semibold">Tổng học phí</p>
+                            <p className="text-xs font-bold font-mono text-slate-800 mt-0.5">{formatVND(r.invoice.totalAmount)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-2 border border-amber-100">
+                            <p className="text-[9px] text-slate-400 uppercase font-semibold">Đã nộp</p>
+                            <p className="text-xs font-bold font-mono text-emerald-700 mt-0.5">{formatVND(r.invoice.paidAmount)}</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-2 border border-amber-100">
+                            <p className="text-[9px] text-slate-400 uppercase font-semibold">Còn lại</p>
+                            <p className="text-xs font-bold font-mono text-rose-600 mt-0.5">
+                              {formatVND(Math.max(0, r.invoice.totalAmount - r.invoice.paidAmount))}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-mono">Mã HĐ: {r.invoice.invoiceCode}</p>
+                      </div>
+                    )}
+                    {/* ────────────────────────────────────────────────────── */}
 
                     {r.status === 'PENDING' && (
                       <div className="mt-4 flex justify-end">
