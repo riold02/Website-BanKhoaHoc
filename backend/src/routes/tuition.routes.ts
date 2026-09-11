@@ -17,6 +17,7 @@ router.get(
 );
 
 router.get('/my', authenticate, authorize([RoleEnum.STUDENT]), tuitionController.getMyTuitionInvoices);
+router.get('/my/:id', authenticate, authorize([RoleEnum.STUDENT]), tuitionController.getMyTuitionInvoiceById);
 router.get('/:id', authenticate, tuitionController.getTuitionInvoiceById);
 
 router.post(

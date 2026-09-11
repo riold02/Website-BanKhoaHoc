@@ -4,6 +4,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { CourseCatalogPage } from './pages/student/CourseCatalogPage';
 import { MyRegistrationsPage } from './pages/student/MyRegistrationsPage';
+import { MyTuitionPage } from './pages/student/MyTuitionPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { CourseManagementPage } from './pages/admin/CourseManagementPage';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
@@ -32,6 +33,14 @@ export const App: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <MyRegistrationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-tuition"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <MyTuitionPage />
             </ProtectedRoute>
           }
         />

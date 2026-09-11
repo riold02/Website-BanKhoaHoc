@@ -49,6 +49,19 @@ export class TuitionController {
     }
   }
 
+  async getMyTuitionInvoiceById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = req.user!;
+      const invoice = await tuitionService.getTuitionInvoiceById(req.params.id, {
+        userId: user.userId,
+        role: user.role,
+      });
+      return sendSuccess(res, invoice, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async recordPayment(req: Request, res: Response, next: NextFunction) {
     try {
       const user = req.user!;

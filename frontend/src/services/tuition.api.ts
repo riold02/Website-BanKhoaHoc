@@ -39,6 +39,18 @@ export interface TuitionInvoiceApiItem {
     referenceNumber?: string | null;
     note?: string | null;
   }>;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountHolder?: string | null;
+  branch?: string | null;
+  transferContent?: string | null;
+  note?: string | null;
+  bankInfo?: any;
+  paymentInfo?: any;
+  transferInfo?: any;
+  bankTransferInfo?: any;
+  transferInstructions?: any;
+  paymentInstructions?: any;
 }
 
 export const tuitionApi = {
@@ -54,6 +66,16 @@ export const tuitionApi = {
       invoices: res.data.data,
       meta: res.data.meta ?? {},
     };
+  },
+
+  async getMyInvoices(): Promise<TuitionInvoiceApiItem[]> {
+    const res = await apiClient.get<ApiSuccessResponse<TuitionInvoiceApiItem[]>>('/tuitions/my');
+    return res.data.data;
+  },
+
+  async getMyInvoiceById(invoiceId: string): Promise<TuitionInvoiceApiItem> {
+    const res = await apiClient.get<ApiSuccessResponse<TuitionInvoiceApiItem>>(`/tuitions/my/${invoiceId}`);
+    return res.data.data;
   },
 
   async recordPayment(

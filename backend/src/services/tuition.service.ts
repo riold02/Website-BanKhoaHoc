@@ -2,6 +2,37 @@ import { prisma } from '../config/database';
 import { AppError } from '../utils/response.util';
 
 export class TuitionService {
+  private buildTransferInfo(invoiceCode?: string | null) {
+    const transferContent = invoiceCode ? `HP ${invoiceCode}` : 'HP TUITION';
+
+    const paymentInfo = {
+      bankName: 'Vietcombank',
+      bankCode: 'VCB',
+      accountNumber: '1023456789',
+      accountHolder: 'CÔNG TY TNHH GIÁO DỤC DLU',
+      branch: 'Chi nhánh Hà Nội',
+      transferContent,
+      note: 'Vui lòng ghi đúng nội dung chuyển khoản để hệ thống đối chiếu hóa đơn.',
+      qrCodeUrl: null,
+    };
+
+    return {
+      bankInfo: paymentInfo,
+      bankTransferInfo: paymentInfo,
+      transferInfo: paymentInfo,
+      paymentInfo,
+      paymentInstructions: paymentInfo,
+      transferInstructions: paymentInfo,
+    };
+  }
+
+  private withTransferInfo<T extends { invoiceCode?: string | null }>(invoice: T) {
+    return {
+      ...invoice,
+      ...this.buildTransferInfo(invoice.invoiceCode),
+    };
+  }
+
   async listTuitionInvoices(query: {
     status?: string;
     studentId?: string;
@@ -58,7 +89,7 @@ export class TuitionService {
     ]);
 
     return {
-      invoices,
+      invoices: invoices.map((invoice) => this.withTransferInfo(invoice)),
       meta: {
         page,
         limit,
@@ -109,7 +140,7 @@ export class TuitionService {
       },
     });
 
-    return invoices;
+    return invoices.map((invoice) => this.withTransferInfo(invoice));
   }
 
   async getTuitionInvoiceById(id: string, requestingUser?: { userId: string; role: string }) {
@@ -151,7 +182,7 @@ export class TuitionService {
       }
     }
 
-    return invoice;
+    return this.withTransferInfo(invoice);
   }
 
   async recordPayment(
