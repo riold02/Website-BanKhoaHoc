@@ -38,7 +38,6 @@ export const AdminSidebar: React.FC = () => {
       label: "Quản lý Khóa học",
       path: "/admin/courses",
       icon: <BookOpen className="h-4 w-4" />,
-      badge: "M02",
     },
     ...(role === "ADMIN"
       ? [
@@ -46,41 +45,33 @@ export const AdminSidebar: React.FC = () => {
             label: "Quản lý Tài khoản",
             path: "/admin/users",
             icon: <Users className="h-4 w-4" />,
-            badge: "M01",
           },
         ]
       : []),
-    // Member 2 Modules (M03, M04, M11)
     {
       label: "Đợt Tuyển sinh",
       path: "/admin/enrollment-periods",
       icon: <CalendarDays className="h-4 w-4" />,
-      badge: "M03",
     },
     {
       label: "Xét duyệt Đơn ĐK",
       path: "/admin/registrations",
       icon: <GraduationCap className="h-4 w-4" />,
-      badge: "M04",
     },
     {
       label: "Quản lý Học viên",
       path: "/admin/students",
       icon: <Users className="h-4 w-4" />,
-      badge: "M11",
     },
-    // Member 3 - M05: Quản lý lớp học
     {
       label: "Lớp học & Điểm danh",
       path: "/admin/classes",
       icon: <Receipt className="h-4 w-4" />,
-      badge: "M05",
     },
     {
       label: "Sổ Học phí & Công nợ",
       path: "/admin/tuition",
       icon: <Receipt className="h-4 w-4" />,
-      badge: 'TV 4',
     },
   ];
 
