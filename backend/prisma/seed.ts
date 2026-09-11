@@ -386,12 +386,22 @@ async function main() {
         },
       });
 
+      const demoPaymentDates = [
+        new Date("2026-06-15T09:30:00Z"),
+        new Date("2026-07-18T14:15:00Z"),
+        new Date("2026-08-05T10:00:00Z"),
+        new Date("2026-08-22T16:45:00Z"),
+        new Date("2026-09-08T11:20:00Z"),
+      ];
+      const assignedDate = demoPaymentDates[index] || new Date();
+
       await prisma.paymentTransaction.upsert({
         where: { transactionCode: `PAY-DEMO-WEB-${index + 1}` },
         update: {
           invoiceId: invoice.id,
           amount: webPeriod.tuitionFee,
           paymentMethod: index % 2 === 0 ? "BANK_TRANSFER" : "CASH",
+          paymentDate: assignedDate,
         },
         create: {
           invoiceId: invoice.id,
@@ -400,6 +410,7 @@ async function main() {
           paymentMethod: index % 2 === 0 ? "BANK_TRANSFER" : "CASH",
           referenceNumber: index % 2 === 0 ? `DEMO-BANK-${index + 1}` : null,
           receiverId: staffUser.id,
+          paymentDate: assignedDate,
           note: "Thanh toán demo đầy đủ học phí",
         },
       });

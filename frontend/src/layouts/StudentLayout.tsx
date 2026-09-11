@@ -50,14 +50,18 @@ export const StudentLayout: React.FC = () => {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">
-              Dự Án CMS - Nhóm 4 Sinh Viên
+              Chất Lượng & Uy Tín Đào Tạo
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Hệ thống Quản lý Đăng ký Khóa học & Học viên xây dựng theo mô hình Monorepo TypeScript, kiến trúc phân tầng Layered Architecture kết hợp RESTful API chuẩn mực.
+              Hệ thống Quản lý Đào tạo & Tuyển sinh Trực tuyến Trường Đại Học Đà Lạt. Đảm bảo quy trình đăng ký minh bạch, tài liệu học tập cập nhật và chứng chỉ có giá trị toàn quốc.
             </p>
-            <p className="text-[11px] text-blue-600 font-semibold mt-3">
-              Thành viên 1: Team Lead, Nền tảng, Auth (M01) & Khóa học (M02)
-            </p>
+            <div className="mt-3 flex items-center gap-3 text-[11px] font-semibold text-blue-600">
+              <a href="/about" className="hover:underline">Về Trung Tâm</a>
+              <span>·</span>
+              <a href="/admissions" className="hover:underline">Hỗ Trợ Tuyển Sinh</a>
+              <span>·</span>
+              <a href="/courses" className="hover:underline">Khóa Học Mới</a>
+            </div>
           </div>
         </div>
 

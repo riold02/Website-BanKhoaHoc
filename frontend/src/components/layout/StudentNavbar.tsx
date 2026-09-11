@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   CalendarDays,
   GraduationCap,
+  Info,
+  LifeBuoy,
   LogIn,
   LogOut,
   ShieldCheck,
@@ -16,95 +18,111 @@ import { Button } from '../ui/Button';
 export const StudentNavbar: React.FC = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname;
+
+  const isActive = (target: string) => path.startsWith(target);
 
   return (
     <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand */}
-        <Link to="/courses" className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
+        <Link to="/courses" className="flex items-center gap-3 shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
             <GraduationCap className="h-6 w-6" />
           </div>
-          <div>
+          <div className="hidden min-[480px]:block">
             <span className="text-base font-black tracking-tight text-slate-900 block leading-tight">
               CMS ĐÀO TẠO DLU
             </span>
-            <span className="text-[11px] font-medium text-slate-500">
+            <span className="text-[11px] font-medium text-slate-500 block whitespace-nowrap">
               Cổng Đăng Ký Khóa Học Trực Tuyến
             </span>
           </div>
         </Link>
 
         {/* Center Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2">
           <Link
             to="/courses"
-            className="text-sm font-semibold text-blue-600 flex items-center gap-1.5 hover:text-blue-700 transition"
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+              isActive('/courses')
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
           >
             <BookOpen className="h-4 w-4" />
-            <span>Danh mục Khóa học</span>
+            <span>Khóa học</span>
           </Link>
           {user && (
             <Link
               to="/my-tuition"
-              className="text-sm font-medium text-slate-700 flex items-center gap-1.5 hover:text-slate-900 transition"
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                isActive('/my-tuition')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
             >
               <WalletCards className="h-4 w-4" />
-              <span>Học phí của tôi</span>
+              <span>Học phí</span>
+            </Link>
+          )}
+          {user && (
+            <Link
+              to="/my-registrations"
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+                isActive('/my-registrations')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Đơn của tôi</span>
             </Link>
           )}
           <Link
-            to="/my-registrations"
-            className="text-sm font-medium text-slate-700 flex items-center gap-1.5 hover:text-slate-900 transition"
+            to="/about"
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+              isActive('/about')
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
           >
-            <ShieldCheck className="h-4 w-4" />
-            <span>Đơn của tôi</span>
+            <Info className="h-4 w-4" />
+            <span>Về Trung Tâm</span>
           </Link>
-          <a
-            href="#features"
-            onClick={(e) => {
-              e.preventDefault();
-              alert(
-                "Thông tin giới thiệu trung tâm đào tạo ngắn hạn ĐH Đà Lạt.",
-              );
-            }}
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+          <Link
+            to="/admissions"
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition ${
+              isActive('/admissions')
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
           >
-            Về Trung Tâm
-          </a>
-          <a
-            href="#faq"
-            onClick={(e) => {
-              e.preventDefault();
-              alert(
-                "Hotline tư vấn tuyển sinh: 0263.3822.246 - Email: daotao@dlu.edu.vn",
-              );
-            }}
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-          >
-            Hỗ Trợ Tuyển Sinh
-          </a>
+            <LifeBuoy className="h-4 w-4" />
+            <span>Hỗ Trợ Tuyển Sinh</span>
+          </Link>
         </nav>
 
         {/* Right Auth Area */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {user ? (
             <div className="flex items-center gap-3">
-              {role === "STUDENT" && (
+              {role === 'STUDENT' && (
                 <Button
-                  variant="outline"
+                  variant={isActive('/my-learning') ? 'primary' : 'outline'}
                   size="sm"
-                  onClick={() => navigate("/my-learning")}
-                  icon={<CalendarDays className="h-4 w-4 text-blue-600" />}
+                  onClick={() => navigate('/my-learning')}
+                  icon={<CalendarDays className="h-4 w-4" />}
                 >
                   Cổng học tập
                 </Button>
               )}
-              {(role === "ADMIN" || role === "STAFF") && (
+              {(role === 'ADMIN' || role === 'STAFF') && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/admin")}
+                  onClick={() => navigate('/admin')}
                   icon={<ShieldCheck className="h-4 w-4 text-blue-600" />}
                 >
                   Vào Trang Quản Trị

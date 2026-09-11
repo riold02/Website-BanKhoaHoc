@@ -69,53 +69,71 @@ export const MyRegistrationsPage: React.FC = () => {
     }
   };
 
+  const pendingCount = registrations.filter((r) => r.status === 'PENDING').length;
+  const approvedCount = registrations.filter((r) => r.status === 'APPROVED').length;
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Hero */}
-      <section className="bg-gradient-to-b from-blue-900 via-blue-800 to-indigo-950 text-white pt-14 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-400/30 mb-4">
-            <ClipboardList className="h-3.5 w-3.5" />
-            Cổng Học viên
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-            Đơn Đăng Ký Của Tôi
-          </h1>
-          <p className="mt-3 text-sm text-blue-100/80 max-w-xl mx-auto">
-            Theo dõi trạng thái xét duyệt đơn đăng ký tuyển sinh của bạn
-          </p>
+      <section className="bg-gradient-to-b from-blue-900 via-blue-800 to-indigo-950 text-white pt-12 pb-18 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-200 border border-blue-400/30 mb-3">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Cổng Học Viên Chính Quy
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+              Đơn Đăng Ký Của Tôi
+            </h1>
+            <p className="mt-2 text-sm text-blue-100/80 max-w-xl">
+              Theo dõi trạng thái xét duyệt đơn tuyển sinh, hạn đóng học phí và thông tin lớp học.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="/courses"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition"
+            >
+              <BookOpen className="h-4 w-4" />
+              Đăng ký thêm khóa mới
+            </a>
+          </div>
         </div>
       </section>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
-        {isLoading ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-20 text-center">
-            <div className="h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-slate-500">Đang tải đơn đăng ký...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-rose-200 p-8 text-center">
-            <AlertCircle className="h-10 w-10 text-rose-400 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-rose-700">{error}</p>
-          </div>
-        ) : registrations.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center px-8">
-            <ClipboardList className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-sm font-bold text-slate-800">Chưa có đơn đăng ký nào</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Bạn chưa đăng ký khóa học nào. Hãy truy cập trang Khóa học để tìm và đăng ký nhé.
-            </p>
-            <a
-              href="/courses"
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition"
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              Xem danh sách khóa học
-            </a>
-          </div>
-        ) : (
-          <div className="space-y-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div className="grid gap-6 lg:grid-cols-12 items-start">
+          {/* Main List (8 cols) */}
+          <div className="lg:col-span-8 space-y-4">
+            {isLoading ? (
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 py-20 text-center">
+                <div className="h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-slate-500">Đang tải danh sách đơn đăng ký...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-white rounded-3xl shadow-sm border border-rose-200 p-8 text-center">
+                <AlertCircle className="h-10 w-10 text-rose-400 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-rose-700">{error}</p>
+              </div>
+            ) : registrations.length === 0 ? (
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 py-16 text-center px-8">
+                <ClipboardList className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-base font-bold text-slate-800">Chưa có đơn đăng ký nào</h3>
+                <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                  Bạn chưa đăng ký khóa học nào. Hãy khám phá danh mục các khóa đào tạo ngắn hạn để chọn lớp học phù hợp.
+                </p>
+                <a
+                  href="/courses"
+                  className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition shadow-sm"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Xem danh sách khóa học
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-4">
             {registrations.map((r) => {
               const stCls = STATUS_STYLE[r.status as RegistrationStatus] || STATUS_STYLE.CANCELLED;
               const stLabel = STATUS_LABEL[r.status as RegistrationStatus] || r.status;
@@ -250,6 +268,90 @@ export const MyRegistrationsPage: React.FC = () => {
             })}
           </div>
         )}
+          </div>
+
+          {/* Right Sidebar (4 cols) */}
+          <aside className="lg:col-span-4 space-y-4">
+            {/* Status Summary */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Tổng Quan Đơn Đăng Ký
+              </h3>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-xl font-black text-slate-900">{registrations.length}</p>
+                  <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Tổng đơn</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
+                  <p className="text-xl font-black text-emerald-600">{approvedCount}</p>
+                  <p className="text-[10px] font-semibold text-emerald-700 mt-0.5">Đã duyệt</p>
+                </div>
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
+                  <p className="text-xl font-black text-amber-600">{pendingCount}</p>
+                  <p className="text-[10px] font-semibold text-amber-700 mt-0.5">Chờ duyệt</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Workflow Guide */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-blue-600" />
+                Quy Trình Xét Duyệt
+              </h3>
+              <div className="space-y-3 text-xs text-slate-600">
+                <div className="flex items-start gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                  <div>
+                    <strong className="text-slate-800">Tiếp nhận & Rà soát hồ sơ:</strong> Giáo vụ kiểm tra thông tin và đối chiếu số lượng chỉ tiêu của đợt.
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                  <div>
+                    <strong className="text-slate-800">Phê duyệt & Xuất hóa đơn:</strong> Đơn được duyệt sẽ tự động kích hoạt hóa đơn học phí kèm mã QR.
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                  <div>
+                    <strong className="text-slate-800">Xếp lớp & Thông báo:</strong> Học viên theo dõi lịch học tại Cổng học tập cá nhân.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+              <a
+                href="/my-tuition"
+                className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition text-xs font-semibold text-slate-700"
+              >
+                <div className="flex items-center gap-2.5">
+                  <WalletCards className="h-4 w-4 text-blue-600" />
+                  <span>Tra cứu hóa đơn học phí</span>
+                </div>
+              </a>
+              <a
+                href="/my-learning"
+                className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition text-xs font-semibold text-slate-700"
+              >
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="h-4 w-4 text-emerald-600" />
+                  <span>Cổng học tập cá nhân</span>
+                </div>
+              </a>
+            </div>
+
+            {/* Help Callout */}
+            <div className="rounded-3xl border border-blue-100 bg-blue-50/60 p-5 text-xs text-blue-900">
+              <p className="font-bold mb-1">Cần hỗ trợ tuyển sinh?</p>
+              <p className="text-blue-800/80 leading-relaxed">
+                Nếu bạn cần điều chỉnh đợt học hoặc hủy đơn gấp, vui lòng liên hệ hotline <strong>(0263) 3822 246</strong> hoặc qua trang <a href="/admissions" className="underline font-semibold">Hỗ trợ tuyển sinh</a>.
+              </p>
+            </div>
+          </aside>
+        </div>
       </main>
     </div>
   );

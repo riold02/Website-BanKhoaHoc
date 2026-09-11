@@ -27,15 +27,17 @@ import { formatVND } from '../../utils/formatters';
 const CHART_COLORS = ['#2563eb', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#14b8a6'];
 
 const formatMonthLabel = (month: string) => {
+  if (!month || month === 'N/A') return month;
   const [year, monthNumber] = month.split('-');
-  const date = new Date(Number(year), Number(monthNumber) - 1, 1);
-  return new Intl.DateTimeFormat('vi-VN', { month: 'short', year: '2-digit' }).format(date);
+  if (!year || !monthNumber) return month;
+  return `T${Number(monthNumber)}/${year.slice(2)}`;
 };
 
 export const AdminDashboardPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [dashboard, setDashboard] = useState<DashboardOverview | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [revenueChartType, setRevenueChartType] = useState<'area' | 'bar'>('area');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,16 +69,20 @@ export const AdminDashboardPage: React.FC = () => {
   const tuitionBreakdown = dashboard?.tuitionBreakdown ?? [];
   const courseBreakdown = dashboard?.courseBreakdown ?? [];
 
-  const chartRevenueData = useMemo(
-    () =>
-      revenueByMonth.length
-        ? revenueByMonth.map((item) => ({
-            name: formatMonthLabel(item.month),
-            revenue: Number(item.revenue || 0),
-          }))
-        : [{ name: 'N/A', revenue: 0 }],
-    [revenueByMonth]
-  );
+  const chartRevenueData = useMemo(() => {
+    if (!revenueByMonth.length) {
+      return [{ name: 'N/A', revenue: 0 }];
+    }
+    return revenueByMonth.map((item) => ({
+      name: formatMonthLabel(item.month),
+      revenue: Number(item.revenue || 0),
+    }));
+  }, [revenueByMonth]);
+
+  const maxRevenueMonth = useMemo(() => {
+    if (!revenueByMonth.length) return null;
+    return revenueByMonth.reduce((prev, curr) => (curr.revenue > prev.revenue ? curr : prev), revenueByMonth[0]);
+  }, [revenueByMonth]);
 
   const chartCourseData = useMemo(
     () =>
@@ -147,32 +153,84 @@ export const AdminDashboardPage: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Doanh Thu Theo Tháng</h3>
-              <p className="text-xs text-slate-500">Xu hướng doanh thu từ các giao dịch đã thanh toán</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900">Doanh Thu Theo Tháng</h3>
+                {maxRevenueMonth && maxRevenueMonth.revenue > 0 && (
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                    Đỉnh: {formatVND(maxRevenueMonth.revenue)} ({formatMonthLabel(maxRevenueMonth.month)})
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Biểu đồ xu hướng doanh thu thu học phí 6 tháng gần nhất</p>
             </div>
-            <div className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">Revenue</div>
+            <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setRevenueChartType('area')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition ${
+                  revenueChartType === 'area'
+                    ? 'bg-white text-blue-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Miền (Area)
+              </button>
+              <button
+                type="button"
+                onClick={() => setRevenueChartType('bar')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition ${
+                  revenueChartType === 'bar'
+                    ? 'bg-white text-blue-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Cột (Bar)
+              </button>
+            </div>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartRevenueData} margin={{ top: 10, right: 16, left: -12, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.04} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
-                <Tooltip
-                  formatter={(value) => formatVND(Number(Array.isArray(value) ? value[0] : value ?? 0))}
-                  labelStyle={{ color: '#0f172a' }}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)' }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={3} fill="url(#revenueFill)" />
-              </AreaChart>
+              {revenueChartType === 'area' ? (
+                <AreaChart data={chartRevenueData} margin={{ top: 10, right: 16, left: -12, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#2563eb" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
+                  <Tooltip
+                    formatter={(value) => [formatVND(Number(Array.isArray(value) ? value[0] : value ?? 0)), 'Doanh thu']}
+                    labelStyle={{ color: '#0f172a', fontWeight: 600 }}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#2563eb"
+                    strokeWidth={3}
+                    fill="url(#revenueFill)"
+                    dot={{ r: 4, stroke: '#2563eb', strokeWidth: 2, fill: '#ffffff' }}
+                    activeDot={{ r: 6, stroke: '#1d4ed8', strokeWidth: 2, fill: '#ffffff' }}
+                  />
+                </AreaChart>
+              ) : (
+                <BarChart data={chartRevenueData} margin={{ top: 10, right: 16, left: -12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
+                  <Tooltip
+                    formatter={(value) => [formatVND(Number(Array.isArray(value) ? value[0] : value ?? 0)), 'Doanh thu']}
+                    labelStyle={{ color: '#0f172a', fontWeight: 600 }}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)' }}
+                  />
+                  <Bar dataKey="revenue" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={48} />
+                </BarChart>
+              )}
             </ResponsiveContainer>
           </div>
         </div>

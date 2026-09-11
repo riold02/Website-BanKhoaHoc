@@ -47,7 +47,23 @@ export class DashboardService {
       }),
     ]);
 
+    // Build rolling 6-month list up to current month or latest transaction
+    const now = new Date();
+    let referenceDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    for (const transaction of paymentTransactions) {
+      const date = new Date(transaction.paymentDate);
+      if (!Number.isNaN(date.getTime()) && date > referenceDate) {
+        referenceDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      }
+    }
+
     const monthMap = new Map<string, number>();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthMap.set(key, 0);
+    }
+
     for (const transaction of paymentTransactions) {
       const date = new Date(transaction.paymentDate);
       if (Number.isNaN(date.getTime())) continue;

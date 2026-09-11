@@ -6,6 +6,8 @@ import { CourseCatalogPage } from './pages/student/CourseCatalogPage';
 import { MyRegistrationsPage } from './pages/student/MyRegistrationsPage';
 import { MyTuitionPage } from './pages/student/MyTuitionPage';
 import { LearningPortalPage } from './pages/student/LearningPortalPage';
+import { AboutPage } from './pages/public/AboutPage';
+import { AdmissionsSupportPage } from './pages/public/AdmissionsSupportPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { CourseManagementPage } from './pages/admin/CourseManagementPage';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
@@ -25,10 +27,12 @@ export const App: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Student Portal Routes */}
+      {/* Student Portal & Public Routes */}
       <Route element={<StudentLayout />}>
         <Route path="/" element={<Navigate to="/courses" replace />} />
         <Route path="/courses" element={<CourseCatalogPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/admissions" element={<AdmissionsSupportPage />} />
         {/* Member 2 - M04: Đơn đăng ký của học viên */}
         <Route
           path="/my-registrations"
