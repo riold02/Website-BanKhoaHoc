@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+
 import {
   CalendarDays, Plus, Search, RefreshCw, ChevronLeft, ChevronRight,
   Users, Clock, Edit3, ToggleLeft, ToggleRight, X, AlertCircle, FileDown,
@@ -27,6 +28,7 @@ const EMPTY_FORM = {
   endRegistration: '',
   expectedStartDate: '',
   tuitionFee: 0,
+  minCapacity: 5,
   maxCapacity: 30,
 };
 
@@ -35,6 +37,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(''); // giá trị thực gửi API
   const [filterStatus, setFilterStatus] = useState('');
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [page, setPage] = useState(1);
@@ -52,6 +55,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     try {
       const result = await enrollmentPeriodApi.getPeriods({
         status: filterStatus || undefined,
+        search: debouncedSearch || undefined,
         page,
         limit: 10,
       });
@@ -62,7 +66,18 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filterStatus, page]);
+  }, [filterStatus, debouncedSearch, page]);
+
+  // Debounce: đợi 400ms sau khi user ngừng gõ mới cập nhật debouncedSearch
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1); // Reset về trang 1 khi thực sự gửi query mới
+    }, 400);
+  };
 
   useEffect(() => {
     loadPeriods();
@@ -100,6 +115,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
       endRegistration: p.endRegistration ? p.endRegistration.slice(0, 16) : '',
       expectedStartDate: p.expectedStartDate ? p.expectedStartDate.slice(0, 16) : '',
       tuitionFee: p.tuitionFee,
+      minCapacity: (p as any).minCapacity ?? 5,
       maxCapacity: p.maxCapacity,
     });
     setFormError('');
@@ -109,6 +125,10 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   const handleSave = async () => {
     if (!form.courseId || !form.periodCode || !form.name || !form.startRegistration || !form.endRegistration) {
       setFormError('Vui lòng điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+    if (Number(form.minCapacity) >= Number(form.maxCapacity)) {
+      setFormError('Sĩ số tối thiểu phải nhỏ hơn sĩ số tối đa.');
       return;
     }
     setIsSaving(true);
@@ -121,6 +141,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
           endRegistration: new Date(form.endRegistration).toISOString(),
           expectedStartDate: form.expectedStartDate ? new Date(form.expectedStartDate).toISOString() : null,
           tuitionFee: Number(form.tuitionFee),
+          minCapacity: Number(form.minCapacity),
           maxCapacity: Number(form.maxCapacity),
         });
       } else {
@@ -132,6 +153,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
           endRegistration: new Date(form.endRegistration).toISOString(),
           expectedStartDate: form.expectedStartDate ? new Date(form.expectedStartDate).toISOString() : null,
           tuitionFee: Number(form.tuitionFee),
+          minCapacity: Number(form.minCapacity),
           maxCapacity: Number(form.maxCapacity),
         });
       }
@@ -145,7 +167,20 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   };
 
   const handleToggleStatus = async (p: EnrollmentPeriod) => {
-    const next = p.status === 'OPEN' ? 'CLOSED' : 'OPEN';
+    // State machine: chỉ cho phép các transition hợp lệ
+    const NEXT_STATUS: Partial<Record<PeriodStatus, PeriodStatus>> = {
+      UPCOMING: 'OPEN',
+      OPEN: 'CLOSED',
+    };
+    const next = NEXT_STATUS[p.status as PeriodStatus];
+    if (!next) return; // CLOSED / CANCELLED không có transition tiếp theo
+
+    const labels: Record<string, string> = {
+      OPEN: 'Mở đợt đăng ký',
+      CLOSED: 'Đóng đợt đăng ký',
+    };
+    if (!window.confirm(`Xác nhận: ${labels[next]} "${p.name}"?`)) return;
+
     try {
       await enrollmentPeriodApi.updatePeriodStatus(p.id, next);
       loadPeriods();
@@ -154,14 +189,8 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
     }
   };
 
-  const filtered = periods.filter((p) => {
-    if (!search) return true;
-    return (
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.periodCode.toLowerCase().includes(search.toLowerCase()) ||
-      p.course?.title?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  // Search đã được xử lý server-side, periods trả về đã được lọc
+  const filtered = periods;
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -202,7 +231,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
             type="text"
             placeholder="Tìm đợt tuyển sinh, mã đợt, tên khóa học..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
         </div>
@@ -296,20 +325,21 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                           >
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
-                          {p.status !== 'CANCELLED' && (
+                          {/* Nút chuyển trạng thái — chỉ hiện với UPCOMING và OPEN */}
+                          {(p.status === 'UPCOMING' || p.status === 'OPEN') && (
                             <button
                               onClick={() => handleToggleStatus(p)}
-                              title={p.status === 'OPEN' ? 'Đóng đợt' : 'Mở đợt'}
+                              title={p.status === 'UPCOMING' ? 'Mở đợt đăng ký' : 'Đóng đợt đăng ký'}
                               className={`p-1.5 rounded-lg transition ${
-                                p.status === 'OPEN'
-                                  ? 'text-emerald-600 hover:bg-emerald-50'
-                                  : 'text-slate-500 hover:bg-slate-100'
+                                p.status === 'UPCOMING'
+                                  ? 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                  : 'text-emerald-600 hover:text-rose-600 hover:bg-rose-50'
                               }`}
                             >
-                              {p.status === 'OPEN' ? (
-                                <ToggleRight className="h-4 w-4" />
-                              ) : (
+                              {p.status === 'UPCOMING' ? (
                                 <ToggleLeft className="h-4 w-4" />
+                              ) : (
+                                <ToggleRight className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -387,7 +417,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đợt <span className="text-rose-500">*</span></label>
                   <input
@@ -397,6 +427,16 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                     disabled={!!editingPeriod}
                     placeholder="VD: PERIOD-WEB-K16"
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Sĩ số tối thiểu <span className="text-rose-500">*</span></label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.minCapacity}
+                    onChange={(e) => setForm({ ...form, minCapacity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                 </div>
                 <div>

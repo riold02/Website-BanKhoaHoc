@@ -12,6 +12,7 @@ export const createEnrollmentPeriodSchema = z.object({
     endRegistration: z.string().datetime({ message: 'endRegistration phải là ISO datetime' }),
     expectedStartDate: z.string().datetime().optional().nullable(),
     tuitionFee: z.number().int().min(0, 'Học phí không được âm').default(0),
+    minCapacity: z.number().int().min(1, 'Sĩ số tối thiểu phải ít nhất là 1').default(5),
     maxCapacity: z.number().int().min(1, 'Sĩ số tối đa phải ít nhất là 1'),
   }),
 });
@@ -23,6 +24,7 @@ export const updateEnrollmentPeriodSchema = z.object({
     endRegistration: z.string().datetime().optional(),
     expectedStartDate: z.string().datetime().optional().nullable(),
     tuitionFee: z.number().int().min(0).optional(),
+    minCapacity: z.number().int().min(1, 'Sĩ số tối thiểu phải ít nhất là 1').optional(),
     maxCapacity: z.number().int().min(1).optional(),
   }),
 });
@@ -39,6 +41,7 @@ export const periodQuerySchema = z.object({
   query: z.object({
     courseId: z.string().uuid().optional(),
     status: z.enum(['UPCOMING', 'OPEN', 'CLOSED', 'CANCELLED']).optional(),
+    search: z.string().optional(),
     page: z.string().optional(),
     limit: z.string().optional(),
   }),

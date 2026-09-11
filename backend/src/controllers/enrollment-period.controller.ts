@@ -5,10 +5,11 @@ import { sendSuccess } from '../utils/response.util';
 export class EnrollmentPeriodController {
   async listPeriods(req: Request, res: Response, next: NextFunction) {
     try {
-      const { courseId, status, page, limit } = req.query;
+      const { courseId, status, search, page, limit } = req.query;
       const result = await enrollmentPeriodService.listPeriods({
         courseId: courseId as string,
         status: status as string,
+        search: search as string,
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
       });

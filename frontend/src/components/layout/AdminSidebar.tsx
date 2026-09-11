@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -10,67 +10,75 @@ import {
   LogOut,
   ExternalLink,
   GraduationCap as LogoIcon,
-} from 'lucide-react';
-import { useAuth } from '../../context/auth.context';
-import { Badge } from '../ui/Badge';
+} from "lucide-react";
+import { useAuth } from "../../context/auth.context";
+import { Badge } from "../ui/Badge";
+
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  exact?: boolean;
+  badge?: string;
+  isComingSoon?: boolean;
+}
 
 export const AdminSidebar: React.FC = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
-      label: 'Tổng quan (Dashboard)',
-      path: '/admin',
+      label: "Tổng quan (Dashboard)",
+      path: "/admin",
       icon: <LayoutDashboard className="h-4 w-4" />,
       exact: true,
     },
     {
-      label: 'Quản lý Khóa học',
-      path: '/admin/courses',
+      label: "Quản lý Khóa học",
+      path: "/admin/courses",
       icon: <BookOpen className="h-4 w-4" />,
-      badge: 'M02',
+      badge: "M02",
     },
-    ...(role === 'ADMIN'
+    ...(role === "ADMIN"
       ? [
           {
-            label: 'Quản lý Tài khoản',
-            path: '/admin/users',
+            label: "Quản lý Tài khoản",
+            path: "/admin/users",
             icon: <Users className="h-4 w-4" />,
-            badge: 'M01',
+            badge: "M01",
           },
         ]
       : []),
     // Member 2 Modules (M03, M04, M11)
     {
-      label: 'Đợt Tuyển sinh',
-      path: '/admin/enrollment-periods',
+      label: "Đợt Tuyển sinh",
+      path: "/admin/enrollment-periods",
       icon: <CalendarDays className="h-4 w-4" />,
-      badge: 'M03',
+      badge: "M03",
     },
     {
-      label: 'Xét duyệt Đơn ĐK',
-      path: '/admin/registrations',
+      label: "Xét duyệt Đơn ĐK",
+      path: "/admin/registrations",
       icon: <GraduationCap className="h-4 w-4" />,
-      badge: 'M04',
+      badge: "M04",
     },
     {
-      label: 'Quản lý Học viên',
-      path: '/admin/students',
+      label: "Quản lý Học viên",
+      path: "/admin/students",
       icon: <Users className="h-4 w-4" />,
-      badge: 'M11',
+      badge: "M11",
     },
-    // Placeholder modules for Members 3, 4
+    // Member 3 - M05: Quản lý lớp học
     {
-      label: 'Lớp học & Điểm danh',
-      path: '/admin/classes',
+      label: "Lớp học & Điểm danh",
+      path: "/admin/classes",
       icon: <Receipt className="h-4 w-4" />,
-      badge: 'TV 3',
-      isComingSoon: true,
+      badge: "M05",
     },
     {
-      label: 'Sổ Học phí & Công nợ',
-      path: '/admin/tuition',
+      label: "Sổ Học phí & Công nợ",
+      path: "/admin/tuition",
       icon: <Receipt className="h-4 w-4" />,
       badge: 'TV 4',
     },
@@ -87,7 +95,9 @@ export const AdminSidebar: React.FC = () => {
           <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-tight">
             TRUNG TÂM ĐÀO TẠO
           </h1>
-          <p className="text-[11px] font-medium text-slate-500">Đại Học Đà Lạt (DLU)</p>
+          <p className="text-[11px] font-medium text-slate-500">
+            Đại Học Đà Lạt (DLU)
+          </p>
         </div>
       </div>
 
@@ -100,20 +110,22 @@ export const AdminSidebar: React.FC = () => {
         {navItems.map((item) => (
           <NavLink
             key={item.path}
-            to={item.isComingSoon ? '#' : item.path}
+            to={item.isComingSoon ? "#" : item.path}
             end={item.exact}
             onClick={(e) => {
               if (item.isComingSoon) {
                 e.preventDefault();
-                alert(`Tính năng '${item.label}' do Thành viên khác trong nhóm phụ trách theo System Design.`);
+                alert(
+                  `Tính năng '${item.label}' do Thành viên khác trong nhóm phụ trách theo System Design.`,
+                );
               }
             }}
             className={({ isActive }) =>
               `flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                 isActive && !item.isComingSoon
-                  ? 'bg-blue-50 text-blue-700 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              } ${item.isComingSoon ? 'opacity-65' : ''}`
+                  ? "bg-blue-50 text-blue-700 font-semibold shadow-xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              } ${item.isComingSoon ? "opacity-65" : ""}`
             }
           >
             <div className="flex items-center gap-3">
@@ -122,7 +134,7 @@ export const AdminSidebar: React.FC = () => {
             </div>
             {item.badge && (
               <Badge
-                variant={item.isComingSoon ? 'slate' : 'primary'}
+                variant={item.isComingSoon ? "slate" : "primary"}
                 size="sm"
                 className="text-[10px] py-0 px-1.5"
               >
@@ -137,7 +149,7 @@ export const AdminSidebar: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate('/courses')}
+          onClick={() => navigate("/courses")}
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
         >
           <div className="flex items-center gap-3">
@@ -153,13 +165,15 @@ export const AdminSidebar: React.FC = () => {
         <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 shadow-2xs">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
-              {user?.profile?.fullName ? user.profile.fullName.charAt(0) : 'U'}
+              {user?.profile?.fullName ? user.profile.fullName.charAt(0) : "U"}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-semibold text-slate-900 truncate">
                 {user?.profile?.fullName || user?.username}
               </p>
-              <p className="text-[10px] font-medium text-blue-600 truncate">{user?.role?.name}</p>
+              <p className="text-[10px] font-medium text-blue-600 truncate">
+                {user?.role?.name}
+              </p>
             </div>
           </div>
           <button

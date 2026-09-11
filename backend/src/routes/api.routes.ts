@@ -5,6 +5,7 @@ import { courseRoutes } from './course.routes';
 import { enrollmentPeriodRoutes } from './enrollment-period.routes';
 import { registrationRoutes } from './registration.routes';
 import { studentRoutes } from './student.routes';
+import { classRoutes } from './class.routes';
 import { tuitionRoutes } from './tuition.routes';
 import { dashboardRoutes } from './dashboard.routes';
 import { excelExportRoutes } from './excel-export.routes';
@@ -12,24 +13,25 @@ import { excelExportRoutes } from './excel-export.routes';
 const router = Router();
 
 // Health check endpoint
-router.get('/health', (req, res) => {
+router.get("/health", (req, res) => {
   res.status(200).json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
-    service: 'Course & Student Management System API (CMS)',
-    version: '1.0.0',
+    service: "Course & Student Management System API (CMS)",
+    version: "1.0.0",
   });
 });
 
 // Member 1 Modules
-router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
-router.use('/courses', courseRoutes);
+router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
+router.use("/courses", courseRoutes);
 
 // Member 2 Modules (M03, M04, M11)
-router.use('/enrollment-periods', enrollmentPeriodRoutes);
-router.use('/registrations', registrationRoutes);
-router.use('/students', studentRoutes);
+router.use("/enrollment-periods", enrollmentPeriodRoutes);
+router.use("/registrations", registrationRoutes);
+router.use("/students", studentRoutes);
+router.use("/classes", classRoutes);
 
 // Member 4 Modules (M06)
 router.use('/tuitions', tuitionRoutes);
