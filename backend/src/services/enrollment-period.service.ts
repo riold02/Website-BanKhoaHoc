@@ -129,6 +129,23 @@ export class EnrollmentPeriodService {
     if (!period) throw new AppError('Đợt tuyển sinh không tồn tại', 404, 'PERIOD_NOT_FOUND');
     if (period.status === 'CANCELLED') throw new AppError('Đợt tuyển sinh đã bị hủy, không thể thay đổi trạng thái', 400, 'PERIOD_CANCELLED');
 
+    // State machine: chỉ cho phép các chuyển trạng thái hợp lệ
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      UPCOMING: ['OPEN', 'CANCELLED'],
+      OPEN:     ['CLOSED', 'CANCELLED'],
+      CLOSED:   [],
+    };
+
+    const allowedNextStatuses = VALID_TRANSITIONS[period.status] ?? [];
+    if (!allowedNextStatuses.includes(status)) {
+      throw new AppError(
+        `Không thể chuyển từ trạng thái '${period.status}' sang '${status}'. Trạng thái hợp lệ tiếp theo: [${allowedNextStatuses.join(', ') || 'Không có'}]`,
+        400,
+        'INVALID_STATUS_TRANSITION',
+        { current: period.status, requested: status, allowed: allowedNextStatuses },
+      );
+    }
+
     return prisma.enrollmentPeriod.update({
       where: { id },
       data: { status },
