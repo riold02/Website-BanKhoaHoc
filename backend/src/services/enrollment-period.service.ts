@@ -108,6 +108,18 @@ export class EnrollmentPeriodService {
       );
     }
 
+    // Validate date range: lấy giá trị hiện tại làm fallback nếu chỉ update 1 trong 2
+    const newStart = data.startRegistration ? new Date(data.startRegistration) : period.startRegistration;
+    const newEnd   = data.endRegistration   ? new Date(data.endRegistration)   : period.endRegistration;
+    if (newEnd <= newStart) {
+      throw new AppError(
+        'Ngày kết thúc đăng ký phải sau ngày bắt đầu đăng ký',
+        400,
+        'INVALID_DATE_RANGE',
+        { startRegistration: newStart, endRegistration: newEnd },
+      );
+    }
+
     return prisma.enrollmentPeriod.update({
       where: { id },
       data: {
@@ -123,6 +135,7 @@ export class EnrollmentPeriodService {
       include: { course: { select: { id: true, courseCode: true, title: true } } },
     });
   }
+
 
   async updatePeriodStatus(id: string, status: string) {
     const period = await prisma.enrollmentPeriod.findUnique({ where: { id } });
