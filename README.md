@@ -24,14 +24,14 @@ Hệ thống **CMS Đào Tạo DLU** là giải pháp số hóa toàn diện quy
 
 ---
 
-## 👥 Bảng Phân Công Nhiệm Vụ 4 Thành Viên
+## 👥 Đội Ngũ Phát Triển & Phân Công Nhiệm Vụ
 
-| Thành viên | Phân hệ (Module) | Trách nhiệm chính |
-| :--- | :--- | :--- |
-| **Thành viên 1**<br>*(Team Lead)* | **M01, M02** | • Kiến trúc Monorepo (`pnpm`) & CSDL Prisma ORM 16 bảng<br>• Phân quyền RBAC, Đăng nhập / Đăng ký bảo mật JWT<br>• Quản trị Khóa học, Danh mục đào tạo (`/admin/courses`) |
-| **Thành viên 2** | **M03, M04, M11** | • Quản lý Đợt tuyển sinh (`/admin/enrollment-periods`)<br>• Xét duyệt đơn đăng ký & tiếp nhận hồ sơ (`/admin/registrations`)<br>• Quản lý danh sách & hồ sơ học viên (`/admin/students`) |
-| **Thành viên 3** | **M05, M07, M08** | • Quản lý Lớp học & sinh lịch buổi học tự động (`/admin/classes`)<br>• **Phân hệ Điểm danh buổi học** (Có mặt, Vắng, Trễ, Miễn)<br>• Cấu hình đầu điểm, nhập điểm và bảng điểm lớp học (`Gradebook`)<br>• Cổng học tập học viên (`/my-learning`): Thời khóa biểu, điểm danh & bảng điểm |
-| **Thành viên 4** | **M06** | • Quản lý Học phí & Sổ theo dõi công nợ (`/admin/tuition`)<br>• Cổng thanh toán học viên (`/my-tuition`) kèm sinh mã QR chuyển khoản<br>• Ghi nhận giao dịch và xuất hóa đơn điện tử |
+| Vai trò | Họ và Tên | Phân hệ (Module) | Trách nhiệm chính |
+| :--- | :--- | :--- | :--- |
+| **Thành viên 1**<br>*(Team Lead)* | **Nguyễn Đức Thủy** | **M01, M02** | • Kiến trúc Monorepo (`pnpm`) & CSDL Prisma ORM 16 bảng<br>• Phân quyền RBAC, Đăng nhập / Đăng ký bảo mật JWT<br>• Quản trị Khóa học, Danh mục đào tạo (`/admin/courses`) |
+| **Thành viên 2** | **Ngô Hồ Tấn Toàn** | **M03, M04, M11** | • Quản lý Đợt tuyển sinh (`/admin/enrollment-periods`)<br>• Xét duyệt đơn đăng ký & tiếp nhận hồ sơ (`/admin/registrations`)<br>• Quản lý danh sách & hồ sơ học viên (`/admin/students`) |
+| **Thành viên 3** | **Lê Hữu Thịnh** | **M05, M07, M08** | • Quản lý Lớp học & sinh lịch buổi học tự động (`/admin/classes`)<br>• **Phân hệ Điểm danh buổi học** (Có mặt, Vắng, Trễ, Miễn)<br>• Cấu hình đầu điểm, nhập điểm và bảng điểm lớp học (`Gradebook`)<br>• Cổng học tập học viên (`/my-learning`): Thời khóa biểu, điểm danh & bảng điểm |
+| **Thành viên 4** | **Nguyễn Hữu Trường** | **M06** | • Quản lý Học phí & Sổ theo dõi công nợ (`/admin/tuition`)<br>• Cổng thanh toán học viên (`/my-tuition`) kèm sinh mã QR chuyển khoản<br>• Ghi nhận giao dịch và xuất hóa đơn điện tử |
 
 ---
 
