@@ -9,8 +9,10 @@ import {
   ReceiptText,
   CreditCard,
   Sparkles,
+  FileDown,
 } from 'lucide-react';
 import { tuitionApi, TuitionInvoiceApiItem } from '../../services/tuition.api';
+import { exportApi } from '../../services/export.api';
 import { formatDate, formatVND } from '../../utils/formatters';
 
 type InvoiceStatus = 'UNPAID' | 'PARTIAL' | 'PAID';
@@ -67,6 +69,7 @@ export const TuitionManagementPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]['key']>('ALL');
   const [toast, setToast] = useState<string | null>(null);
+  const [isExportingReport, setIsExportingReport] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<TuitionInvoice | null>(null);
   const [selectedNoteInvoice, setSelectedNoteInvoice] = useState<TuitionInvoice | null>(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
@@ -161,6 +164,18 @@ export const TuitionManagementPage: React.FC = () => {
       totalInvoices: invoices.length,
     };
   }, [invoices]);
+
+  const handleExportTuitionReport = async () => {
+    setIsExportingReport(true);
+    try {
+      await exportApi.exportTuitionReport();
+      setToast('Đã xuất báo cáo học phí thành công');
+    } catch (error: any) {
+      setToast(error?.message || 'Không thể xuất báo cáo học phí');
+    } finally {
+      setIsExportingReport(false);
+    }
+  };
 
   const openPaymentModal = (invoice: TuitionInvoice) => {
     const remaining = Math.max(0, invoice.totalAmount - invoice.paidAmount);
@@ -283,18 +298,30 @@ export const TuitionManagementPage: React.FC = () => {
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                  activeTab === tab.key ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    activeTab === tab.key ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExportTuitionReport}
+              disabled={isExportingReport}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isExportingReport ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <FileDown className="h-4 w-4" />}
+              {isExportingReport ? 'Đang tải...' : 'Xuất Excel'}
+            </button>
           </div>
 
           <div className="relative w-full max-w-sm">

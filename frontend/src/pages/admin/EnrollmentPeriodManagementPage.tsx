@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   CalendarDays, Plus, Search, RefreshCw, ChevronLeft, ChevronRight,
-  Users, Clock, Edit3, ToggleLeft, ToggleRight, X, AlertCircle,
+  Users, Clock, Edit3, ToggleLeft, ToggleRight, X, AlertCircle, FileDown,
 } from 'lucide-react';
 import { enrollmentPeriodApi } from '../../services/enrollment-period.api';
 import { courseApi } from '../../services/course.api';
+import { exportApi } from '../../services/export.api';
 import { EnrollmentPeriod } from '../../types/enrollment.types';
 import { Course } from '../../types/course.types';
 import { formatVND, formatDate } from '../../utils/formatters';
@@ -44,6 +45,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingClasses, setIsExportingClasses] = useState(false);
 
   const loadPeriods = useCallback(async () => {
     setIsLoading(true);
@@ -69,6 +71,17 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   useEffect(() => {
     courseApi.getCourses({ isActive: true, limit: 100 }).then((r) => setCourses(r.courses));
   }, []);
+
+  const handleExportClassList = async () => {
+    setIsExportingClasses(true);
+    try {
+      await exportApi.exportClassList();
+    } catch (err: any) {
+      alert(err.message || 'Không thể xuất file danh sách lớp');
+    } finally {
+      setIsExportingClasses(false);
+    }
+  };
 
   const openCreate = () => {
     setEditingPeriod(null);
@@ -161,13 +174,24 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">Tạo và quản lý các đợt tuyển sinh cho từng khóa học</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Thêm Đợt Tuyển sinh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportClassList}
+            disabled={isExportingClasses}
+            className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isExportingClasses ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" /> : <FileDown className="h-4 w-4" />}
+            {isExportingClasses ? 'Đang tải...' : 'Xuất Excel'}
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm Đợt Tuyển sinh
+          </button>
+        </div>
       </div>
 
       {/* Toolbar */}

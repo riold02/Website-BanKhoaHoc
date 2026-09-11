@@ -6,6 +6,8 @@ import { enrollmentPeriodRoutes } from './enrollment-period.routes';
 import { registrationRoutes } from './registration.routes';
 import { studentRoutes } from './student.routes';
 import { tuitionRoutes } from './tuition.routes';
+import { dashboardRoutes } from './dashboard.routes';
+import { excelExportRoutes } from './excel-export.routes';
 
 const router = Router();
 
@@ -31,5 +33,7 @@ router.use('/students', studentRoutes);
 
 // Member 4 Modules (M06)
 router.use('/tuitions', tuitionRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/exports', excelExportRoutes);
 
 export const apiRoutes = router;
