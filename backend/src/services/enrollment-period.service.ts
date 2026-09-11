@@ -66,6 +66,7 @@ export class EnrollmentPeriodService {
     endRegistration: string;
     expectedStartDate?: string | null;
     tuitionFee: number;
+    minCapacity?: number;
     maxCapacity: number;
   }) {
     const course = await prisma.course.findUnique({ where: { id: data.courseId } });
@@ -79,6 +80,15 @@ export class EnrollmentPeriodService {
     const end = new Date(data.endRegistration);
     if (end <= start) throw new AppError('Ngày kết thúc đăng ký phải sau ngày bắt đầu', 400, 'INVALID_DATE_RANGE');
 
+    const minCap = data.minCapacity ?? 5;
+    if (minCap >= data.maxCapacity) {
+      throw new AppError(
+        `Sĩ số tối thiểu (${minCap}) phải nhỏ hơn sĩ số tối đa (${data.maxCapacity})`,
+        400,
+        'INVALID_CAPACITY_RANGE',
+      );
+    }
+
     return prisma.enrollmentPeriod.create({
       data: {
         courseId: data.courseId,
@@ -88,6 +98,7 @@ export class EnrollmentPeriodService {
         endRegistration: end,
         expectedStartDate: data.expectedStartDate ? new Date(data.expectedStartDate) : null,
         tuitionFee: data.tuitionFee,
+        minCapacity: minCap,
         maxCapacity: data.maxCapacity,
         status: 'UPCOMING',
       },
@@ -103,6 +114,7 @@ export class EnrollmentPeriodService {
       endRegistration?: string;
       expectedStartDate?: string | null;
       tuitionFee?: number;
+      minCapacity?: number;
       maxCapacity?: number;
     }
   ) {
@@ -115,6 +127,17 @@ export class EnrollmentPeriodService {
         `Sĩ số tối đa không thể nhỏ hơn số học viên đã đăng ký (${period.currentEnrolled})`,
         400,
         'CAPACITY_TOO_LOW'
+      );
+    }
+
+    // Validate minCapacity < maxCapacity
+    const newMin = data.minCapacity ?? period.minCapacity;
+    const newMax = data.maxCapacity ?? period.maxCapacity;
+    if (newMin >= newMax) {
+      throw new AppError(
+        `Sĩ số tối thiểu (${newMin}) phải nhỏ hơn sĩ số tối đa (${newMax})`,
+        400,
+        'INVALID_CAPACITY_RANGE',
       );
     }
 
@@ -140,6 +163,7 @@ export class EnrollmentPeriodService {
           ? { expectedStartDate: data.expectedStartDate ? new Date(data.expectedStartDate) : null }
           : {}),
         ...(data.tuitionFee !== undefined ? { tuitionFee: data.tuitionFee } : {}),
+        ...(data.minCapacity !== undefined ? { minCapacity: data.minCapacity } : {}),
         ...(data.maxCapacity !== undefined ? { maxCapacity: data.maxCapacity } : {}),
       },
       include: { course: { select: { id: true, courseCode: true, title: true } } },

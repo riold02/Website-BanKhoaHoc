@@ -27,6 +27,7 @@ const EMPTY_FORM = {
   endRegistration: '',
   expectedStartDate: '',
   tuitionFee: 0,
+  minCapacity: 5,
   maxCapacity: 30,
 };
 
@@ -101,6 +102,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
       endRegistration: p.endRegistration ? p.endRegistration.slice(0, 16) : '',
       expectedStartDate: p.expectedStartDate ? p.expectedStartDate.slice(0, 16) : '',
       tuitionFee: p.tuitionFee,
+      minCapacity: (p as any).minCapacity ?? 5,
       maxCapacity: p.maxCapacity,
     });
     setFormError('');
@@ -110,6 +112,10 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
   const handleSave = async () => {
     if (!form.courseId || !form.periodCode || !form.name || !form.startRegistration || !form.endRegistration) {
       setFormError('Vui lòng điền đầy đủ các trường bắt buộc.');
+      return;
+    }
+    if (Number(form.minCapacity) >= Number(form.maxCapacity)) {
+      setFormError('Sĩ số tối thiểu phải nhỏ hơn sĩ số tối đa.');
       return;
     }
     setIsSaving(true);
@@ -122,6 +128,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
           endRegistration: new Date(form.endRegistration).toISOString(),
           expectedStartDate: form.expectedStartDate ? new Date(form.expectedStartDate).toISOString() : null,
           tuitionFee: Number(form.tuitionFee),
+          minCapacity: Number(form.minCapacity),
           maxCapacity: Number(form.maxCapacity),
         });
       } else {
@@ -133,6 +140,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
           endRegistration: new Date(form.endRegistration).toISOString(),
           expectedStartDate: form.expectedStartDate ? new Date(form.expectedStartDate).toISOString() : null,
           tuitionFee: Number(form.tuitionFee),
+          minCapacity: Number(form.minCapacity),
           maxCapacity: Number(form.maxCapacity),
         });
       }
@@ -385,7 +393,7 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Mã đợt <span className="text-rose-500">*</span></label>
                   <input
@@ -395,6 +403,16 @@ export const EnrollmentPeriodManagementPage: React.FC = () => {
                     disabled={!!editingPeriod}
                     placeholder="VD: PERIOD-WEB-K16"
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Sĩ số tối thiểu <span className="text-rose-500">*</span></label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.minCapacity}
+                    onChange={(e) => setForm({ ...form, minCapacity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   />
                 </div>
                 <div>
